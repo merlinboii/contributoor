@@ -30,4 +30,21 @@ pub mod mvp_contributoor {
     pub fn update_task(ctx: Context<UpdateTask>, task_id: u64, task_name: Option<String>, task_description: Option<String>, status: Option<TaskStatus>, duration: Option<u32>) -> Result<()> {
         instructions::tasks::update_task(ctx, task_id, task_name, task_description, status, duration)
     }
+
+    pub fn claim_task(ctx: Context<ClaimTask>, task_id: u64) -> Result<()> {
+        instructions::tasks::claim_task(ctx, task_id)
+    }
+
+    pub fn submit_task(ctx: Context<SubmitTask>, task_id: u64) -> Result<()> {
+        instructions::tasks::submit_task(ctx, task_id)
+    }   
+
+    pub fn approve_task(ctx: Context<ApproveTask>, task_id: u64) -> Result<()> {
+        instructions::tasks::approve_task(ctx, task_id)
+    }
+
+    pub fn reject_task(ctx: Context<RejectTask>, task_id: u64) -> Result<()> {
+        instructions::tasks::reject_task(ctx, task_id)
+    }
+
 }
