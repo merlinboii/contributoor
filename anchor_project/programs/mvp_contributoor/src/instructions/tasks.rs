@@ -14,7 +14,7 @@ pub fn create_task(
 
     // Initialize the task
     task.create(
-        project.task_counter.to_string(),
+        project.task_counter,
         name,
         description,
         project.key(),
@@ -53,7 +53,7 @@ pub fn update_task(
     task.update(name, description, status, duration);
 
     emit!(TaskEvent {
-        uuid: task.uuid.clone(),
+        uuid: task.uuid,
         name: task.name.clone(),
         status: task.status.clone(),
         project: task.project,
@@ -63,7 +63,7 @@ pub fn update_task(
     Ok(())
 }
 
-pub fn claim_task(ctx: Context<ClaimTask>, task_id: u64, assignee: Pubkey) -> Result<()> {
+pub fn claim_task(ctx: Context<ClaimTask>, task_id: u64) -> Result<()> {
     let task = &mut ctx.accounts.task;
     let task_assignment = &mut ctx.accounts.task_assignment;
     let user = &ctx.accounts.user;
@@ -76,11 +76,11 @@ pub fn claim_task(ctx: Context<ClaimTask>, task_id: u64, assignee: Pubkey) -> Re
     require!(user.key() != task.creator, TaskUnauthorizedError::CannotClaimOwnTask);
 
     // Create a new task assignment
-    task_assignment.assign(task_id, assignee, clock.unix_timestamp, clock.unix_timestamp + task.duration as i64);
+    task_assignment.assign(task_id, user.key(), clock.unix_timestamp, clock.unix_timestamp + task.duration as i64);
 
     // Update the task status to claimed
     task.status = TaskStatus::Claimed;
-    task.assignee = Some(assignee);
+    task.assignee = Some(user.key());
 
     Ok(())
 }
@@ -198,6 +198,9 @@ pub struct UpdateTask<'info> {
 #[instruction(task_id: u64, assignee: Pubkey)]
 pub struct ClaimTask<'info> {
     #[account(mut)]
+    pub user: Signer<'info>,
+    
+    #[account(mut)]
     pub project: Account<'info, Project>,
 
     #[account(
@@ -218,14 +221,12 @@ pub struct ClaimTask<'info> {
         seeds = [
             b"task-assignment",
             task.key().as_ref(),
-            assignee.as_ref()
+            user.key().as_ref()
         ],
         bump,
     )]
     pub task_assignment: Account<'info, TaskAssignment>,
 
-    #[account(mut)]
-    pub user: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 

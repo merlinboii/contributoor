@@ -3,7 +3,7 @@ use crate::errors::*;
 
 #[account]
 pub struct Task {
-    pub uuid: String,
+    pub uuid: u64,
     pub name: String,
     pub description: String,
     pub status: TaskStatus,
@@ -17,7 +17,7 @@ pub struct Task {
 impl Task {
     pub fn create(
         &mut self,
-        uuid: String,
+        uuid: u64,
         name: String,
         description: String,
         project: Pubkey,
