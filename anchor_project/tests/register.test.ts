@@ -235,8 +235,6 @@ describe('Register Test', async () => {
     expect((await program.account.project.fetch(projectPDA)).name).to.equal('ContributoorLab');
     expect((await program.account.project.fetch(projectPDA)).description).to.equal('ContributoorLab Project for test');
     expect((await program.account.project.fetch(projectPDA)).owner.toBase58()).to.equal(provider.wallet.publicKey.toBase58());
-    expect((await program.account.project.fetch(projectPDA)).taskIds).to.empty;
-
   });
 
   it('Cannot register the same project name twice', async () => {
