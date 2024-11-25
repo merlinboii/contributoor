@@ -38,7 +38,6 @@ impl Task {
         &mut self,
         name: Option<String>,
         description: Option<String>,
-        status: Option<TaskStatus>,
         duration: Option<u32>
     ) {
         if let Some(name) = name {
@@ -46,9 +45,6 @@ impl Task {
         }
         if let Some(description) = description {
             self.description = description;
-        }
-        if let Some(status) = status {
-            self.status = status;
         }
         if let Some(duration) = duration {
             self.duration = duration;
