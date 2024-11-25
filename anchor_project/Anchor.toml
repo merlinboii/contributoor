@@ -4,18 +4,23 @@
 resolution = true
 skip-lint = false
 
+[programs.devnet]
+mvp_contributoor = "HnznVd9qKht4y49dn7b3jn62mouX8srYCy1WW8UrtiPV"
+
 [programs.localnet]
-mvp_contributoor = "Au7tS1bnJSi4ieFJrrSkdukxnUS2fwVcczrj1vtbCuWy"
+mvp_contributoor = "HnznVd9qKht4y49dn7b3jn62mouX8srYCy1WW8UrtiPV"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
 cluster = "Localnet"
-wallet = "~/.config/solana/id.json"
-
-[test]
-startup_wait = 30000
+wallet = "./id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+[test]
+startup_wait = 30000
+shutdown_wait = 2000
+upgradeable = false
