@@ -16,8 +16,8 @@ pub enum CreateTaskError {
 
 #[error_code]
 pub enum TaskError {
-    #[msg("Task is not open for claiming")]
-    TaskNotOpen,
+    #[msg("Task is not open or being claimed")]
+    TaskNotOpenOrBeingClaimed,
     #[msg("Task is not claimed")]
     TaskNotClaimed,
     #[msg("Task is not ended")]
