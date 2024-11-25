@@ -23,7 +23,6 @@ pub fn create_task(
     );
 
     // Add the task to the project's task list
-    project.task_ids.push(task.key());
     project.task_counter += 1;
     
     emit!(TaskEvent {
@@ -37,20 +36,47 @@ pub fn create_task(
     Ok(())
 }
 
-pub fn update_task(
+pub fn update_task_info(
     ctx: Context<UpdateTask>,
     task_id: u64,
     name: Option<String>,
-    description: Option<String>,
-    status: Option<TaskStatus>,
-    duration: Option<u32>
+    description: Option<String>
 ) -> Result<()> {
     let task = &mut ctx.accounts.task;
     
     require!(task.creator == ctx.accounts.user.key(), TaskUnauthorizedError::UnauthorizedAccess);
 
+    let task_duration = task.duration;
+
     // Update task fields
-    task.update(name, description, status, duration);
+    task.update(name, description, Some(task_duration));
+
+    emit!(TaskEvent {
+        uuid: task.uuid,
+        name: task.name.clone(),
+        status: task.status.clone(),
+        project: task.project,
+        creator: task.creator,
+        duration: task.duration,
+    });
+    Ok(())
+}
+
+pub fn update_task_duration(
+    ctx: Context<UpdateTask>,
+    task_id: u64,
+    duration: Option<u32>
+) -> Result<()> {
+    let task = &mut ctx.accounts.task;
+    
+    require!(task.creator == ctx.accounts.user.key(), TaskUnauthorizedError::UnauthorizedAccess);
+    
+    // Clone necessary fields before mutable borrow
+    let task_name = task.name.clone();
+    let task_description = task.description.clone();
+
+    // Update task fields
+    task.update(Some(task_name), Some(task_description), duration);
 
     emit!(TaskEvent {
         uuid: task.uuid,
@@ -67,10 +93,11 @@ pub fn claim_task(ctx: Context<ClaimTask>, task_id: u64) -> Result<()> {
     let task = &mut ctx.accounts.task;
     let task_assignment = &mut ctx.accounts.task_assignment;
     let user = &ctx.accounts.user;
+    let contributor = &mut ctx.accounts.contributor;
     let clock = Clock::get().unwrap();
 
     // Ensure the task is open before claiming
-    require!(task.status == TaskStatus::Open, TaskError::TaskNotOpen);
+    require!(task.status == TaskStatus::Open, TaskError::TaskNotOpenOrBeingClaimed);
 
     // Ensure the user is not the project owner
     require!(user.key() != task.creator, TaskUnauthorizedError::CannotClaimOwnTask);
@@ -81,6 +108,8 @@ pub fn claim_task(ctx: Context<ClaimTask>, task_id: u64) -> Result<()> {
     // Update the task status to claimed
     task.status = TaskStatus::Claimed;
     task.assignee = Some(user.key());
+
+    contributor.tasks_process += 1;
 
     Ok(())
 }
@@ -111,7 +140,7 @@ pub fn approve_task(ctx: Context<ApproveTask>, task_id: u64) -> Result<()> {
     let task = &mut ctx.accounts.task;
     let task_assignment = &mut ctx.accounts.task_assignment;
     let user = &ctx.accounts.user;
-
+    let contributor: &mut Account<'_, Contributor> = &mut ctx.accounts.contributor;
     // Ensure the user is the creator of the task
     require!(task.creator == user.key(), TaskUnauthorizedError::UnauthorizedAccess);
 
@@ -120,9 +149,12 @@ pub fn approve_task(ctx: Context<ApproveTask>, task_id: u64) -> Result<()> {
 
     // Update the task status to approved
     task.status = TaskStatus::Completed;
+    task.assignee = None;
 
     // Reset the task assignment
     task_assignment.reset();
+
+    contributor.tasks_completed += 1;
 
     Ok(())
 }
@@ -131,6 +163,7 @@ pub fn reject_task(ctx: Context<RejectTask>, task_id: u64) -> Result<()> {
     let task = &mut ctx.accounts.task;
     let task_assignment = &mut ctx.accounts.task_assignment;
     let user = &ctx.accounts.user;
+    let contributor = &mut ctx.accounts.contributor;
 
     // Ensure the user is the creator of the task
     require!(task.creator == user.key(), TaskUnauthorizedError::UnauthorizedAccess);
@@ -140,9 +173,12 @@ pub fn reject_task(ctx: Context<RejectTask>, task_id: u64) -> Result<()> {
 
     // Update the task status to rejected
     task.status = TaskStatus::Open;
+    task.assignee = None;
 
     // Reset the task assignment
     task_assignment.reset();
+
+    contributor.tasks_failed += 1;
 
     Ok(())
 }
@@ -156,9 +192,14 @@ pub struct CreateTask<'info> {
     pub project: Account<'info, Project>,
 
     #[account(
-        init,
+        init_if_needed,
         payer = user,
-        space = 8 + 32 + 32 + 8 + 8 + 4 + 4 + 200, // Adjust space as needed
+        space = 8 +  // discriminator
+                32 + // owner
+                (4 + 50) + // name (4 for string length + max 50 chars)
+                (4 + 200) + // description (4 for string length + max 200 chars)
+                50 + // task_counter
+                1, // bump        
         seeds = [
             b"task-info",
             project.key().as_ref(),
@@ -195,7 +236,7 @@ pub struct UpdateTask<'info> {
 
 // Context for claiming a task
 #[derive(Accounts)]
-#[instruction(task_id: u64, assignee: Pubkey)]
+#[instruction(task_id: u64)]
 pub struct ClaimTask<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -226,6 +267,13 @@ pub struct ClaimTask<'info> {
         bump,
     )]
     pub task_assignment: Account<'info, TaskAssignment>,
+
+    #[account(
+        mut,
+        seeds = [b"contributor-info", user.key().as_ref()], // Seeds for deterministic address.
+        bump
+    )]
+    pub contributor: Account<'info, Contributor>,
 
     pub system_program: Program<'info, System>,
 }
@@ -261,6 +309,13 @@ pub struct SubmitTask<'info> {
     )]
     pub task_assignment: Account<'info, TaskAssignment>,
 
+    #[account(
+        mut,
+        seeds = [b"contributor-info", user.key().as_ref()], // Seeds for deterministic address.
+        bump
+    )]
+    pub contributor: Account<'info, Contributor>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -289,11 +344,18 @@ pub struct ApproveTask<'info> {
         seeds = [
             b"task-assignment",
             task.key().as_ref(),
-            task.assignee.unwrap().as_ref()
+            task.assignee.unwrap().as_ref() 
         ],
         bump,
     )]
     pub task_assignment: Account<'info, TaskAssignment>,
+
+    #[account(
+        mut,
+        seeds = [b"contributor-info", task.assignee.unwrap().as_ref()], // Seeds for deterministic address.
+        bump
+    )]
+    pub contributor: Account<'info, Contributor>,
 }
 
 #[derive(Accounts)]
@@ -326,4 +388,11 @@ pub struct RejectTask<'info> {
         bump,
     )]
     pub task_assignment: Account<'info, TaskAssignment>,
+
+    #[account(
+        mut,
+        seeds = [b"contributor-info", task.assignee.unwrap().as_ref()], // Seeds for deterministic address.
+        bump
+    )]
+    pub contributor: Account<'info, Contributor>,
 }

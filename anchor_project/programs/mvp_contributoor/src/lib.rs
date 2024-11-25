@@ -27,8 +27,12 @@ pub mod mvp_contributoor {
         instructions::tasks::create_task(ctx, task_name, task_description, duration)
     }
 
-    pub fn update_task(ctx: Context<UpdateTask>, task_id: u64, task_name: Option<String>, task_description: Option<String>, status: Option<TaskStatus>, duration: Option<u32>) -> Result<()> {
-        instructions::tasks::update_task(ctx, task_id, task_name, task_description, status, duration)
+    pub fn update_task_info(ctx: Context<UpdateTask>, task_id: u64, task_name: Option<String>, task_description: Option<String>) -> Result<()> {
+        instructions::tasks::update_task_info(ctx, task_id, task_name, task_description)
+    }
+
+    pub fn update_task_duration(ctx: Context<UpdateTask>, task_id: u64, duration: Option<u32>) -> Result<()> {
+        instructions::tasks::update_task_duration(ctx, task_id, duration)
     }
 
     pub fn claim_task(ctx: Context<ClaimTask>, task_id: u64) -> Result<()> {
