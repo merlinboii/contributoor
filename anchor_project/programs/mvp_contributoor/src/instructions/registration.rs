@@ -23,7 +23,6 @@ pub fn register_project(ctx: Context<CreateProject>, name: String, description: 
     project.owner = user.key();
     project.name = name; // Store the name in the project account.
     project.description = description; // Store the description in the project account.
-    project.task_ids = Vec::new();  // Start with an empty task list
     project.task_counter = 0;
     Ok(())
 } 
