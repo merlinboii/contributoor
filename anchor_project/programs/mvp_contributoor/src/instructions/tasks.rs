@@ -45,6 +45,7 @@ pub fn update_task_info(
     let task = &mut ctx.accounts.task;
     
     require!(task.creator == ctx.accounts.user.key(), TaskUnauthorizedError::UnauthorizedAccess);
+    require!(task.status == TaskStatus::Open, TaskError::TaskNotOpenOrBeingClaimed);
 
     let task_duration = task.duration;
 
@@ -70,7 +71,8 @@ pub fn update_task_duration(
     let task = &mut ctx.accounts.task;
     
     require!(task.creator == ctx.accounts.user.key(), TaskUnauthorizedError::UnauthorizedAccess);
-    
+    require!(task.status == TaskStatus::Open, TaskError::TaskNotOpenOrBeingClaimed);
+
     // Clone necessary fields before mutable borrow
     let task_name = task.name.clone();
     let task_description = task.description.clone();
@@ -155,6 +157,7 @@ pub fn approve_task(ctx: Context<ApproveTask>, task_id: u64) -> Result<()> {
     task_assignment.reset();
 
     contributor.tasks_completed += 1;
+    contributor.tasks_process -= 1;
 
     Ok(())
 }
@@ -179,6 +182,7 @@ pub fn reject_task(ctx: Context<RejectTask>, task_id: u64) -> Result<()> {
     task_assignment.reset();
 
     contributor.tasks_failed += 1;
+    contributor.tasks_process -= 1;
 
     Ok(())
 }
