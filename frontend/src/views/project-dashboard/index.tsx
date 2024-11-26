@@ -1,101 +1,167 @@
-import { Box, Button, Card, CardContent, Typography, Grid } from '@mui/material'
+import { Box, Button, Card, CardContent, Typography, Grid, IconButton } from '@mui/material'
+import AddCircleIcon from '@mui/icons-material/AddCircle';
+import AddIcon from '@mui/icons-material/Add';
 
 // Next, React
 import { FC, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 // Wallet
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { PublicKey } from '@solana/web3.js';
+import { Program, AnchorProvider, setProvider } from "@coral-xyz/anchor";
+import idl from '../../components/mvp_contributoor.json';
+import { MvpContributoor as MvpContributoorType } from '../../components/mvp_contributoor';
+import { notify } from '../../utils/notifications';
+import { checkProjectAccount, getProjectAccount } from '../../utils/projectUtils';
+import { walletConnectedCheck } from '../../utils/utils';
+import { TaskCardsProject } from '../../components/TaskCardProject';
+import { TaskStatus } from '../../utils/enum';
 
-// Components
-import { RequestAirdrop } from '../../components/RequestAirdrop';
-import { NavContributorButton } from '../../components/NavContributor';
-import { NavProjectButton } from '../../components/NavProject';
-import pkg from '../../../package.json';
+const idl_string = JSON.stringify(idl);
+const idl_object = JSON.parse(idl_string);
+const programID = new PublicKey(idl.address);
 
-// Store
-import useUserSOLBalanceStore from '../../stores/useUserSOLBalanceStore';
+const durationSecondsToDays = (duration: number) => {
+    return Math.round(duration / (24 * 60 * 60));
+}
+
+const filterTasks = (tasks: any[], owner: PublicKey) => {
+    return tasks.filter((task) => {
+        return task.account.creator.toBase58() === owner.toBase58();
+    });
+}
+
+const statusOrder = {
+    [TaskStatus.Open]: 1,
+    [TaskStatus.Submitted]: 2,
+    [TaskStatus.Claimed]: 3,
+    [TaskStatus.Completed]: 4,
+};
 
 export const ProjectDashboardView: FC = () => {
+    const router = useRouter();
     const wallet = useWallet();
     const { connection } = useConnection();
-  
-    const balance = useUserSOLBalanceStore((s) => s.balance);
-    const { getUserSOLBalance } = useUserSOLBalanceStore();
-  
+    const [tasks, setTasks] = useState<any[]>([]);
+    const [projectAccount, setProjectAccount] = useState<any>(null);
+    const getProvider = () => {
+        const provider = new AnchorProvider(connection, wallet, AnchorProvider.defaultOptions());
+        setProvider(provider);
+        return provider;
+    };
+
     useEffect(() => {
-      if (wallet.publicKey) {
-        console.log(wallet.publicKey.toBase58());
-        getUserSOLBalance(wallet.publicKey, connection);
-      }
-    }, [wallet.publicKey, connection, getUserSOLBalance]);
+        const setMode = () => {
+            localStorage.setItem('mode', 'Project');
+        }
+
+        const fetchTasks = async () => {
+            const walletConnected = await walletConnectedCheck(wallet);
+            if (walletConnected) {
+                const hasProjectAccount = await checkProjectAccount(wallet, connection);
+                if (!hasProjectAccount) {
+                    notify({
+                        type: 'error',
+                        message: 'Please register your project first',
+                    });
+                  router.push('/'); // Redirect to the main page if no account is found
+                  return;
+                }
+                const projectAccount = await getProjectAccount(wallet, connection);
+                setProjectAccount(projectAccount);
+              } else {
+                router.push('/');
+                return;
+            }
+
+            try {
+                const anchProvider = getProvider();
+                const program = new Program<MvpContributoorType>(idl_object, anchProvider);
+
+                const taskAccounts = await program.account.task.all();
+
+                console.log(taskAccounts);
+
+                const tasks = taskAccounts
+                    .filter((task) => task.account.creator?.toBase58() === anchProvider.publicKey.toBase58())
+                    .map((task) => {
+                        const status = Object.keys(task.account.status)[0];
+
+                        return {
+                            pda: task.publicKey,
+                            id: task.account.uuid.toString(),
+                            title: task.account.name,
+                            description: task.account.description,
+                            duration: task.account.duration,
+                            completed: status === TaskStatus.Completed,
+                            status: status,
+                            creator: task.account.creator?.toBase58(),
+                            assignee: task.account.assignee?.toBase58(),
+                        };
+                    })
+                    .sort((a, b) => {
+                        return statusOrder[a.status] - statusOrder[b.status];
+                    });
+                setTasks(tasks);
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+                notify({ type: 'error', message: 'Failed to fetch tasks' });
+            }
+        };
+        
+        setMode();
+        fetchTasks();
+    }, [wallet.publicKey, connection]);
 
     const handleMarkComplete = async (taskId: string) => {
         alert(taskId);
-        // if (publicKey) {
-        //   await markTaskComplete(publicKey, taskId)
-        //   setTasks(tasks.map(task => 
-        //     task.id === taskId ? { ...task, completed: true } : task
-        //   ))
-        // }
-      }
-// Mock data for tasks
-const tasks = [
-    {
-        id: '1',
-        title: 'Design Homepage',
-        dueDate: '2023-11-01',
-        description: 'Create a responsive design for the homepage.',
-        completed: false,
-    },
-    {
-        id: '2',
-        title: 'Implement Authentication',
-        dueDate: '2023-11-05',
-        description: 'Set up user authentication using OAuth.',
-        completed: false,
-    },
-    {
-        id: '3',
-        title: 'Write Unit Tests',
-        dueDate: '2023-11-10',
-        description: 'Write unit tests for the new features.',
-        completed: true,
-    },
-];
+        // Implement task completion logic here
+    };
 
-return (
-    <Box sx={{ maxWidth: 1200, margin: 'auto', padding: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Project Task Dashboard
-      </Typography>
-      <Grid container spacing={4}>
-        {tasks.map((task) => (
-          <Grid item xs={12} sm={6} md={4} key={task.id}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" component="div">
-                  {task.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Due: {task.dueDate}
-                </Typography>
-                <Typography variant="body2" paragraph>
-                  {task.description}
-                </Typography>
-                <Button 
-                  variant="contained" 
-                  onClick={() => handleMarkComplete(task.id)}
-                  disabled={task.completed}
-                >
-                  {task.completed ? "Completed" : "Mark as Complete"}
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
-  )
-}
+    const handleCreateTask = () => {
+        router.push('/create-task');
+    };
 
+    return (
+        <Box sx={{ maxWidth: 1400, margin: 'auto', padding: 4, position: 'relative' }}>
+            <Box display="flex" alignItems="center" justifyContent="center" mb={4}>
+                <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-indigo-500 to-fuchsia-500">
+                    {projectAccount?.name} Dashboard
+                </h1>
+                {tasks.length > 0 && (
+                    <IconButton aria-label="add" onClick={handleCreateTask}>
+                        <AddCircleIcon sx={{ color: 'white', fontSize: 40 }} />
+                    </IconButton>
+                )}
+            </Box>
+            {tasks.length === 0 ? (
+                <Box textAlign="center" mt={4}>
+                    <Typography variant="h6" gutterBottom>
+                        oOh seems like the project doesn&apos;t have any tasks yet.
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon sx={{ color: 'white', fontSize: 20 }} />}
+                        sx={{
+                            backgroundColor: '#9945FF',
+                            color: 'white',
+                            '&:hover': {
+                                backgroundColor: '#7e3bdc',
+                            },
+                            borderRadius: '8px',
+                            padding: '10px 20px',
+                            fontWeight: 'normal',
+                        }}
+                        onClick={handleCreateTask}
+                    >
+                        Create your first task
+                    </Button>
+                </Box>
+            ) : (
+                <TaskCardsProject tasks={tasks} handleMarkComplete={handleMarkComplete} />
+            )}
+        </Box>
+    );
+};
