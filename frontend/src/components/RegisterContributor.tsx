@@ -47,14 +47,16 @@ export const RegisterContributor: FC<RegisterContributorProps> = ({ name }) => {
                 program.programId
             );
 
-            const signature = await program.methods.registerContributor(
-                name
-            ).accounts({
+            // define an obj before using
+            const registerContributorAccounts = {
                 user: anchProvider.publicKey,
                 contributor: contributorPDA,
                 nameRegistry: nameRegistryPDA,
                 systemProgram: SystemProgram.programId,
-            }).rpc();
+            };
+            const signature = await program.methods.registerContributor(
+                name
+            ).accounts(registerContributorAccounts).rpc();
 
             // Get the latest block hash to use on our transaction and confirmation
             const latestBlockhash = await connection.getLatestBlockhash();

@@ -8,7 +8,7 @@ import { useRouter } from 'next/router';
 import { Program, AnchorProvider, web3, utils, BN, setProvider } from "@coral-xyz/anchor"
 import idl from "./mvp_contributoor.json"
 import { MvpContributoor as MvpContributoorType } from "./mvp_contributoor"
-import { PublicKey, SystemProgram } from '@solana/web3.js';
+import { PublicKey, SystemProgram, TransactionSignature } from '@solana/web3.js';
 
 const idl_string = JSON.stringify(idl)
 const idl_object = JSON.parse(idl_string)
@@ -43,14 +43,15 @@ export const RegisterProject: FC<RegisterProjectProps> = ({ name, description })
                 program.programId
             );
             
-            signature = await program.methods.registerProject(
-                name,
-                description,
-            ).accounts({
+            const registerProjectAccounts = {
                 user: anchProvider.publicKey,
                 project: projectPDA,
                 systemProgram: SystemProgram.programId,
-            }).rpc();
+            };
+            signature = await program.methods.registerProject(
+                name,
+                description,
+            ).accounts(registerProjectAccounts).rpc();
             
             // Get the lates block hash to use on our transaction and confirmation
             let latestBlockhash = await connection.getLatestBlockhash()
