@@ -290,6 +290,67 @@ describe('Task Tests', async () => {
         expect(err.error.errorCode.code).to.equal('UnauthorizedAccess');
       }
     });
+
+    it('Prevents owner from updating task when claimed', async () => {
+      const taskAccount = await program.account.task.fetch(taskPDA);
+      const taskId = taskAccount.uuid;
+  
+      // Claim the task
+      const [taskAssignmentPDA] = await PublicKey.findProgramAddressSync(
+        [
+          anchor.utils.bytes.utf8.encode('task-assignment'),
+          taskPDA.toBuffer(),
+          contributor.publicKey.toBuffer()
+        ],
+        program.programId
+      );
+  
+      await program.methods
+        .claimTask(taskId)
+        .accounts({
+          user: contributor.publicKey,
+          project: projectPDA,
+          task: taskPDA,
+          taskAssignment: taskAssignmentPDA,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([contributor])
+        .rpc();
+  
+      // Attempt to update the task info
+      try {
+        await program.methods
+          .updateTaskInfo(taskId, 'UnauthorizedUpdate', 'Should fail')
+          .accounts({
+            user: projectOwner.publicKey,
+            project: projectPDA,
+            task: taskPDA,
+          })
+          .signers([projectOwner])
+          .rpc();
+        expect.fail('Should have thrown error');
+      } catch (error: any) {
+        const err = anchor.AnchorError.parse(error.logs);
+        expect(err.error.errorCode.code).to.equal('TaskNotOpenOrBeingClaimed');
+      }
+
+      // Attempt to update the task duration
+      try {
+        await program.methods
+          .updateTaskDuration(taskId, 7200)
+          .accounts({
+            user: projectOwner.publicKey,
+            project: projectPDA,
+            task: taskPDA,
+          })
+          .signers([projectOwner])
+          .rpc();
+        expect.fail('Should have thrown error');
+      } catch (error: any) {
+        const err = anchor.AnchorError.parse(error.logs);
+        expect(err.error.errorCode.code).to.equal('TaskNotOpenOrBeingClaimed');
+      }
+    });
   });
 
   describe('Task Assignment', async () => {
@@ -335,6 +396,17 @@ describe('Task Tests', async () => {
         program.programId
       );
 
+      const [contributorPDA] = await PublicKey.findProgramAddressSync(
+        [
+          anchor.utils.bytes.utf8.encode('contributor-info'),
+          contributor.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      const contributorAccount = await program.account.contributor.fetch(contributorPDA);
+
+
       await program.methods
         .claimTask(taskId)
         .accounts({
@@ -346,8 +418,14 @@ describe('Task Tests', async () => {
         })
         .signers([contributor])
         .rpc();
+  
 
       const taskAccountAfter = await program.account.task.fetch(taskPDA);
+      const contributorAccountAfter = await program.account.contributor.fetch(contributorPDA);
+
+      expect(contributorAccountAfter.tasksProcess.toNumber()).to.eq(contributorAccount.tasksProcess.toNumber() + 1);
+      expect(contributorAccountAfter.tasksCompleted.toNumber()).to.eq(contributorAccount.tasksCompleted.toNumber());
+      expect(contributorAccountAfter.tasksFailed.toNumber()).to.eq(contributorAccount.tasksFailed.toNumber());
       expect(taskAccountAfter.assignee.toString()).to.equal(contributor.publicKey.toString());
       expect(JSON.stringify(taskAccountAfter.status)).to.equal(JSON.stringify({ claimed: {} }));
     });
@@ -643,6 +721,16 @@ describe('Task Tests', async () => {
     });
 
     it('Allows owner to approve task successfully', async () => {
+      const [contributorPDA] = await PublicKey.findProgramAddressSync(
+        [
+          anchor.utils.bytes.utf8.encode('contributor-info'),
+          contributor.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      const contributorAccount = await program.account.contributor.fetch(contributorPDA);
+
       await program.methods
         .approveTask(taskAccount.uuid)
         .accounts({
@@ -655,6 +743,11 @@ describe('Task Tests', async () => {
         })
         .signers([projectOwner])
         .rpc();
+
+      const contributorAccountAfter = await program.account.contributor.fetch(contributorPDA);
+      expect(contributorAccountAfter.tasksProcess.toNumber()).to.eq(contributorAccount.tasksProcess.toNumber() - 1);
+      expect(contributorAccountAfter.tasksCompleted.toNumber()).to.eq(contributorAccount.tasksCompleted.toNumber() + 1);
+      expect(contributorAccountAfter.tasksFailed.toNumber()).to.eq(contributorAccount.tasksFailed.toNumber());
 
       const taskAccountAfter = await program.account.task.fetch(taskPDA);
       expect(JSON.stringify(taskAccountAfter.status)).to.equal(JSON.stringify({ completed: {} }));
@@ -688,6 +781,16 @@ describe('Task Tests', async () => {
     });
 
     it('Allows owner to reject task successfully', async () => {
+      const [contributorPDA] = await PublicKey.findProgramAddressSync(
+        [
+          anchor.utils.bytes.utf8.encode('contributor-info'),
+          contributor.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      const contributorAccount = await program.account.contributor.fetch(contributorPDA);
+
       await program.methods
         .rejectTask(taskAccount.uuid)
         .accounts({
@@ -700,6 +803,11 @@ describe('Task Tests', async () => {
         })
         .signers([projectOwner])
         .rpc();
+      
+      const contributorAccountAfter = await program.account.contributor.fetch(contributorPDA);
+      expect(contributorAccountAfter.tasksProcess.toNumber()).to.eq(contributorAccount.tasksProcess.toNumber() - 1);
+      expect(contributorAccountAfter.tasksCompleted.toNumber()).to.eq(contributorAccount.tasksCompleted.toNumber());
+      expect(contributorAccountAfter.tasksFailed.toNumber()).to.eq(contributorAccount.tasksFailed.toNumber() + 1);
 
       const taskAccountAfter = await program.account.task.fetch(taskPDA);
       expect(JSON.stringify(taskAccountAfter.status)).to.equal(JSON.stringify({ open: {} }));
