@@ -1,4 +1,4 @@
-import { Box, Button, Card, CardContent, Typography, Grid } from '@mui/material';
+import { Box, Button, Card, CardContent, Typography, Grid, ButtonGroup } from '@mui/material';
 
 // Next, React
 import { FC, useEffect, useState } from 'react';
@@ -12,6 +12,7 @@ import { checkContributorAccount, getContributorAccount } from 'utils/contributo
 import { useRouter } from 'next/router';
 import { TaskCardsContributor } from '../../components/TaskCardContributor';
 import { TaskStatus } from 'utils/enum';
+import { Cancel, Task, CheckCircle } from '@mui/icons-material';
 
 const idl_string = JSON.stringify(idl);
 const idl_object = JSON.parse(idl_string);
@@ -21,6 +22,12 @@ const durationSecondsToDays = (duration: number) => {
     return Math.round(duration / (24 * 60 * 60));
 }
 
+const statusOrder = {
+    [TaskStatus.Open]: 1,
+    [TaskStatus.Submitted]: 2,
+    [TaskStatus.Claimed]: 3,
+    [TaskStatus.Completed]: 4,
+};
 
 export const UserTasksDashboardView: FC = () => {
     const wallet = useWallet();
@@ -28,6 +35,9 @@ export const UserTasksDashboardView: FC = () => {
     const [tasks, setTasks] = useState<any[]>([]);
     const router = useRouter();
     const [contributorAccount, setContributorAccount] = useState<any>(null);
+    const [claimedTasks, setClaimedTasks] = useState<number>(0);
+    const [failedTasks, setFailedTasks] = useState<number>(0);
+    const [successTasks, setSuccessTasks] = useState<number>(0);
 
     const getProvider = () => {
         const provider = new AnchorProvider(connection, wallet, AnchorProvider.defaultOptions());
@@ -44,6 +54,10 @@ export const UserTasksDashboardView: FC = () => {
                   return;
                 }
                 const contributorAccount = await getContributorAccount(wallet, connection);
+
+                setClaimedTasks(contributorAccount.tasksProcess ? Number(contributorAccount.tasksProcess) : 0);
+                setFailedTasks(contributorAccount.tasksFailed ? Number(contributorAccount.tasksFailed) : 0);
+                setSuccessTasks(contributorAccount.tasksCompleted ? Number(contributorAccount.tasksCompleted) : 0);
                 setContributorAccount(contributorAccount);
               } else {
                 notify({
@@ -71,7 +85,8 @@ export const UserTasksDashboardView: FC = () => {
                     duration: durationSecondsToDays(task.account.duration),
                     status: Object.keys(task.account.status)[0],
                     creator: task.account.creator,
-                }));
+                }))
+                .sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
 
                 setTasks(tasks);
             } catch (error) {
@@ -94,6 +109,30 @@ export const UserTasksDashboardView: FC = () => {
                 <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-indigo-500 to-fuchsia-500">
                     {contributorAccount?.name}&apos;s Tasks
                 </h1>
+            </Box>
+            <Box display="flex" alignItems="center" justifyContent="center" mb={4}>
+            <ButtonGroup color="secondary" variant="outlined" aria-label="Basic button group">
+                <Button color="primary" startIcon={<Task />}>Processing: {claimedTasks}</Button>
+                <Button color="success" startIcon={<CheckCircle />}>Success: {successTasks}</Button>
+                <Button color="warning" startIcon={<Cancel />}>Failed: {failedTasks}</Button>
+            </ButtonGroup>
+                {/* <Grid container spacing={2}>
+                    <Grid item xs={4}>
+                        <Button variant="contained" color="success" fullWidth>
+                            Success: {successTasks}
+                        </Button>
+                    </Grid>
+                    <Grid item xs={4}>
+                        <Button variant="contained" color="primary" fullWidth>
+                            Claimed: {claimedTasks}
+                        </Button>
+                    </Grid>
+                    <Grid item xs={4}>
+                        <Button variant="contained" color="error" fullWidth>
+                            Failed: {failedTasks}
+                        </Button>
+                    </Grid>
+                </Grid> */}
             </Box>
             {tasks.length === 0 ? (
                 <Box textAlign="center" mt={4}>
