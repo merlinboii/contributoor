@@ -1,7 +1,7 @@
 import { Program, AnchorProvider, setProvider } from "@coral-xyz/anchor";
 import idl from "../components/mvp_contributoor.json";
 import { PublicKey } from '@solana/web3.js';
-import { MvpContributoor } from "components/mvp_contributoor";
+import { MvpContributoor } from "../components/mvp_contributoor";
 
 const idl_string = JSON.stringify(idl);
 const idl_object = JSON.parse(idl_string);
@@ -29,7 +29,6 @@ export const checkContributorAccount = async (wallet: any, connection: any): Pro
         );
 
         const accountInfo = await program.account.contributor.fetch(contributorPDA);
-        console.log(accountInfo);
         return accountInfo !== null;
     } catch (error) {
         console.error("Error checking contributor account:", error);

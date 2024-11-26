@@ -2,7 +2,7 @@ import { Program, AnchorProvider, setProvider } from "@coral-xyz/anchor";
 import idl from "../components/mvp_contributoor.json";
 import { PublicKey } from '@solana/web3.js';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { MvpContributoor } from "components/mvp_contributoor";
+import { MvpContributoor } from "../components/mvp_contributoor";
 
 const idl_string = JSON.stringify(idl);
 const idl_object = JSON.parse(idl_string);

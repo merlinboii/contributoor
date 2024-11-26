@@ -1,7 +1,7 @@
 import { Program, AnchorProvider, setProvider, BN } from "@coral-xyz/anchor";
 import idl from "../components/mvp_contributoor.json";
 import { PublicKey, SystemProgram, TransactionSignature } from '@solana/web3.js';
-import { MvpContributoor } from "components/mvp_contributoor";
+import { MvpContributoor } from "../components/mvp_contributoor";
 import { getProjectAccountByPublicKey } from "./projectUtils";
 import { TaskStatus } from "./enum";
 import { getContributorAccountByPublicKey } from "./contributorUtils";
@@ -101,17 +101,19 @@ export const createTask = async (ownerKey: PublicKey, wallet: any, connection: a
         ],
         program.programId
     );
-            
-    signature = await program.methods.createTask(
-        name,
-        description,
-        duration,
-    ).accounts({
+
+    const createTaskAccounts = {
         user: anchProvider.publicKey,
         project: projectPDA,
         task: taskPDA,
         systemProgram: SystemProgram.programId,
-    }).rpc();
+    };
+
+    signature = await program.methods.createTask(
+        name,
+        description,
+        duration,
+    ).accounts(createTaskAccounts).rpc();
 
     return signature;
 }
@@ -122,16 +124,18 @@ export const updateTaskInfo = async (wallet: any, ownerKey: any, connection: any
   
     const projectPDA = await getProjectAccountByPublicKey(wallet, ownerKey, connection);
 
+    const updateTaskInfoAccounts = {
+        user: anchProvider.publicKey,
+        project: projectPDA,
+        task: taskPDA,
+        systemProgram: SystemProgram.programId,
+    };
+
     signature = await program.methods.updateTaskInfo(
           new BN(taskId),
           name,
           description
-      ).accounts({
-          user: anchProvider.publicKey,
-          project: projectPDA,
-          task: taskPDA,
-          systemProgram: SystemProgram.programId,
-      }).rpc();
+      ).accounts(updateTaskInfoAccounts).rpc();
 
     return signature;
 }
@@ -142,15 +146,17 @@ export const updateTaskDuration = async (wallet: any, ownerKey: any, connection:
   
     const projectPDA = await getProjectAccountByPublicKey(wallet, ownerKey, connection);
     
+    const updateTaskDurationAccounts = {
+        user: anchProvider.publicKey,
+        project: projectPDA,
+        task: taskPDA,
+        systemProgram: SystemProgram.programId,
+    };
+
     signature = await program.methods.updateTaskDuration(
           new BN(taskId),
           daysToSeconds(duration)
-      ).accounts({
-          user: anchProvider.publicKey,
-          project: projectPDA,
-          task: taskPDA,
-          systemProgram: SystemProgram.programId,
-      }).rpc();
+      ).accounts(updateTaskDurationAccounts).rpc();
 
     return signature;
 }
@@ -163,16 +169,18 @@ export const approveTask = async (wallet: any, ownerKey: PublicKey, connection: 
     const taskAssignmentPDA = await getTaskAssignmentAccountByPublicKey(taskPDA, assignee);
     const contributorPDA = await getContributorAccountByPublicKey(wallet, assignee, connection);
 
+    const approveTaskAccounts = {
+        user: anchProvider.publicKey,
+        project: projectPDA,
+        task: taskPDA,
+        taskAssignment: taskAssignmentPDA,
+        contributor: contributorPDA,
+        systemProgram: SystemProgram.programId,
+    };
+
     signature = await program.methods.approveTask(
         new BN(taskId),
-    ).accounts({
-          user: anchProvider.publicKey,
-          project: projectPDA,
-          task: taskPDA,
-          taskAssignment: taskAssignmentPDA,
-          contributor: contributorPDA,
-          systemProgram: SystemProgram.programId,
-      }).rpc();
+    ).accounts(approveTaskAccounts).rpc();
 
     return signature;
 }
@@ -185,16 +193,18 @@ export const rejectTask = async (wallet: any, ownerKey: PublicKey, connection: a
     const taskAssignmentPDA = await getTaskAssignmentAccountByPublicKey(taskPDA, assignee);
     const contributorPDA = await getContributorAccountByPublicKey(wallet, assignee, connection);
 
+    const rejectTaskAccounts = {
+        user: anchProvider.publicKey,
+        project: projectPDA,
+        task: taskPDA,
+        taskAssignment: taskAssignmentPDA,
+        contributor: contributorPDA,
+        systemProgram: SystemProgram.programId,
+    };
+
     signature = await program.methods.rejectTask(
         new BN(taskId),
-    ).accounts({
-          user: anchProvider.publicKey,
-          project: projectPDA,
-          task: taskPDA,
-          taskAssignment: taskAssignmentPDA,
-          contributor: contributorPDA,
-          systemProgram: SystemProgram.programId,
-      }).rpc();
+    ).accounts(rejectTaskAccounts).rpc();
 
     return signature;
 }
@@ -206,15 +216,17 @@ export const claimTask = async (wallet: any, projectOwnerKey: PublicKey, connect
     const projectPDA = await getProjectAccountByPublicKey(wallet, projectOwnerKey, connection);
     const taskAssignmentPDA = await getTaskAssignmentAccountByPublicKey(taskPDA, anchProvider.publicKey);
     
-    signature = await program.methods.claimTask(
-        new BN(taskId),
-    ).accounts({
+    const claimTaskAccounts = {
         user: anchProvider.publicKey,
         project: projectPDA,
         task: taskPDA,
         taskAssignment: taskAssignmentPDA,
         systemProgram: SystemProgram.programId,
-    }).rpc();
+    };
+
+    signature = await program.methods.claimTask(
+        new BN(taskId),
+    ).accounts(claimTaskAccounts).rpc();
 
     return signature;
 }
@@ -226,15 +238,17 @@ export const submitTask = async (wallet: any, projectOwnerKey: PublicKey, connec
     const projectPDA = await getProjectAccountByPublicKey(wallet, projectOwnerKey, connection);
     const taskAssignmentPDA = await getTaskAssignmentAccountByPublicKey(taskPDA, anchProvider.publicKey);
     
-    signature = await program.methods.submitTask(
-        new BN(taskId),
-    ).accounts({
+    const submitTaskAccounts = {
         user: anchProvider.publicKey,
         project: projectPDA,
         task: taskPDA,
         taskAssignment: taskAssignmentPDA,
         systemProgram: SystemProgram.programId,
-    }).rpc();
+    };
+
+    signature = await program.methods.submitTask(
+        new BN(taskId),
+    ).accounts(submitTaskAccounts).rpc();
 
     return signature;
 }
