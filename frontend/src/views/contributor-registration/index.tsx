@@ -11,8 +11,9 @@ import { RegisterContributor } from '../../components/RegisterContributor';
 // Utils
 import { checkContributorAccount } from '../../utils/contributorUtils';
 import { notify } from '../../utils/notifications';
+import { walletConnectedCheck } from '../../utils/utils';
 
-export const ContributorRegisterView: FC = () => {
+export const ContributorRegistrationView: FC = () => {
   const router = useRouter();
   const wallet = useWallet();
   const { connection } = useConnection();
@@ -20,16 +21,17 @@ export const ContributorRegisterView: FC = () => {
 
   useEffect(() => {
     const checkAndRedirect = async () => {
-      if (wallet.publicKey) {
-        const hasContributorAccount = await checkContributorAccount(wallet.publicKey, connection);
+      const walletConnected = await walletConnectedCheck(wallet);
+      if (walletConnected) {
+        const hasContributorAccount = await checkContributorAccount(wallet, connection);
         if (hasContributorAccount) {
+          notify({
+            type: 'error',
+            message: 'You already have a contributor registered',
+            });
           router.push('/'); // Redirect to the main page if the user already registered
         }
       } else {
-        notify({
-          type: 'error',
-          message: 'Please connect your wallet to continue',
-        });
         router.push('/');
       }
     };
@@ -40,11 +42,11 @@ export const ContributorRegisterView: FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="bg-transparent shadow-lg rounded-lg p-5 w-[450px]">
-          <h2 className="text-2xl font-bold mb-4 text-center text-indigo-500">Register Your Project</h2>
-          <p className="text-base text-gray-600 mb-6 text-center">Create your project to start receiving contributions</p>
+          <h2 className="text-2xl font-bold mb-4 text-center text-indigo-500">Become a Contributor</h2>
+          <p className="text-base text-gray-600 mb-6 text-center">Create your contributor to start exploring tasks</p>
           <form onSubmit={(e) => { e.preventDefault(); }}>
             <div className="mb-6">
-              <label className="block text-lg font-light text-gray-600">Project Name</label>
+              <label className="block text-lg font-light text-gray-600">Name</label>
               <input
                 type="text"
                 value={contributorName}

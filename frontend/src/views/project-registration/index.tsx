@@ -11,7 +11,7 @@ import { RegisterProject } from '../../components/RegisterProject';
 // Utils
 import { checkProjectAccount } from '../../utils/projectUtils';
 import { notify } from '../../utils/notifications';
-
+import { walletConnectedCheck } from '../../utils/utils';
 export const ProjectRegisterView: FC = () => {
   const router = useRouter();
   const wallet = useWallet();
@@ -21,17 +21,20 @@ export const ProjectRegisterView: FC = () => {
 
   useEffect(() => {
     const checkAndRedirect = async () => {
-      if (wallet.publicKey) {
-        const hasProjectAccount = await checkProjectAccount(wallet.publicKey, connection);
+      const walletConnected = await walletConnectedCheck(wallet);
+      if (walletConnected) {
+        const hasProjectAccount = await checkProjectAccount(wallet, connection);
         if (hasProjectAccount) {
+          notify({
+            type: 'error',
+            message: 'You already have a project registered',
+          });
           router.push('/'); // Redirect to the main page if the user already registered
+          return;
         }
       } else {
-        notify({
-          type: 'error',
-          message: 'Please connect your wallet to continue',
-        });
         router.push('/');
+        return;
       }
     };
 
