@@ -5,10 +5,10 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-mvp_contributoor = "HnznVd9qKht4y49dn7b3jn62mouX8srYCy1WW8UrtiPV"
+mvp_contributoor = "8FJ5rHaNCcaNgwPGnBSFtPHniYpvi7MxEzBjyXFJZaKc"
 
 [programs.localnet]
-mvp_contributoor = "HnznVd9qKht4y49dn7b3jn62mouX8srYCy1WW8UrtiPV"
+mvp_contributoor = "4RZQo3d4HTy971QBHYorECL62y11jzJxsg5ppvCvrSbz"
 
 [registry]
 url = "https://api.apr.dev"

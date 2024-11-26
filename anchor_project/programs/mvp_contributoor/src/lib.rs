@@ -9,7 +9,7 @@ use instructions::*;
 use crate::state::TaskStatus;
 
 
-declare_id!("HnznVd9qKht4y49dn7b3jn62mouX8srYCy1WW8UrtiPV");
+declare_id!("4RZQo3d4HTy971QBHYorECL62y11jzJxsg5ppvCvrSbz");
 
 #[program]
 pub mod mvp_contributoor {
