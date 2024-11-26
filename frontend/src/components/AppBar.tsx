@@ -61,7 +61,7 @@ export const AppBar: FC = () => {
             {router.pathname === '/project-dashboard' && (
               <>
               {/* Toggle Switch for Modes */}
-              <div className="form-control">
+              {/* <div className="form-control">
               <label className="cursor-pointer label">
                 <span className="label-text text-white">{mode === 'Project' ? 'Project Mode' : 'Contributor Mode'}</span>
                 <input
@@ -71,7 +71,12 @@ export const AppBar: FC = () => {
                   onChange={toggleMode}
                 />
                 </label>
-              </div>
+              </div> */}
+              <NavElement
+                label="Contributor Mode"
+                href="/tasks-dashboard"
+                navigationStarts={() => setIsNavOpen(false)}
+              />
             </>
             )}
             {(router.pathname === '/tasks-dashboard' || router.pathname === '/my-tasks') && (
@@ -87,7 +92,7 @@ export const AppBar: FC = () => {
                 navigationStarts={() => setIsNavOpen(false)}
               />
               {/* Toggle Switch for Modes */}
-              <div className="form-control">
+              {/* <div className="form-control">
               <label className="cursor-pointer label">
                 <span className="label-text text-white">{mode === 'Project' ? 'Project Mode' : 'Contributor Mode'}</span>
                 <input
@@ -97,7 +102,12 @@ export const AppBar: FC = () => {
                   onChange={toggleMode}
                 />
                 </label>
-              </div>
+              </div> */}
+              <NavElement
+                label="Project Mode"
+                href="/project-dashboard"
+                navigationStarts={() => setIsNavOpen(false)}
+              />
               </>
             )}
             <WalletMultiButtonDynamic className="btn-ghost btn-sm rounded-btn text-lg mr-6 " />
