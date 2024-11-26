@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography, TextField, Button, Paper } from '@mui/material';
+import { secondsToDays } from '../utils/taskUtils';
 
 interface TaskEditPopupProps {
   task: {
@@ -16,7 +17,7 @@ interface TaskEditPopupProps {
 export const TaskEditPopup: React.FC<TaskEditPopupProps> = ({ task, onClose, onSave, onSaveDuration }) => {
   const [name, setName] = React.useState(task.title);
   const [description, setDescription] = React.useState(task.description);
-  const [duration, setDuration] = React.useState(task.duration);
+  const [duration, setDuration] = React.useState(secondsToDays(task.duration));
 
   const handleSave = () => {
     onSave(task.id, name, description);
