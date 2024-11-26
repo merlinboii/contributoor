@@ -3,14 +3,14 @@ use crate::errors::*;
 
 #[account]
 pub struct Task {
+    pub creator: Pubkey,
+    pub assignee: Option<Pubkey>,
+    pub project: Pubkey,
     pub uuid: u64,
     pub name: String,
     pub description: String,
     pub status: TaskStatus,
-    pub project: Pubkey,
-    pub creator: Pubkey,
     pub duration: u32,
-    pub assignee: Option<Pubkey>,
     pub bump: u8,
 }
 
