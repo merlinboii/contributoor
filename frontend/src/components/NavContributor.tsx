@@ -13,7 +13,7 @@ import idl from "./mvp_contributoor.json"
 import { MvpContributoor as MvpContributoorType } from "./mvp_contributoor"
 import { PublicKey } from '@solana/web3.js';
 
-import { checkProjectAccount } from '../utils/projectUtils';
+import { checkContributorAccount } from '../utils/contributorUtils';
 
 const idl_string = JSON.stringify(idl)
 const idl_object = JSON.parse(idl_string)
@@ -30,9 +30,14 @@ export const NavContributorButton: FC = () => {
       return provider
   }
 
-  const onClick = () => {
+  const onClick = async () => {
     if (ourWallet.publicKey) {
-      router.push('/tasks-dashboard');
+      const hasContributorAccount = await checkContributorAccount(ourWallet, connection);
+      if (!hasContributorAccount) {
+        router.push('/contributor-registration');
+      } else {
+        router.push('/tasks-dashboard');
+      }
     } else {
         notify({ type: 'error', message: 'Please connect your wallet to continue' });
         return;

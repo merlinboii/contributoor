@@ -32,7 +32,7 @@ export const NavProjectButton: FC = () => {
 
   const onClick = async () => {
     if (ourWallet.publicKey) {
-      const projectExists = await checkProjectAccount(ourWallet.publicKey, connection);
+      const projectExists = await checkProjectAccount(ourWallet, connection);
       if (projectExists) {
         router.push('/project-dashboard');
       } else {
