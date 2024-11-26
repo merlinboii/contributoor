@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-mvp_contributoor = "8FJ5rHaNCcaNgwPGnBSFtPHniYpvi7MxEzBjyXFJZaKc"
+mvp_contributoor = "2Gy7qY6QX6cBF6WDXY4vssoskAq29witMf4JcSmh1jQd"
 
 [programs.localnet]
 mvp_contributoor = "4RZQo3d4HTy971QBHYorECL62y11jzJxsg5ppvCvrSbz"
