@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/mvp_contributoor.json`.
  */
 export type MvpContributoor = {
-  "address": "HnznVd9qKht4y49dn7b3jn62mouX8srYCy1WW8UrtiPV",
+  "address": "2Gy7qY6QX6cBF6WDXY4vssoskAq29witMf4JcSmh1jQd",
   "metadata": {
     "name": "mvpContributoor",
     "version": "0.1.0",
@@ -1031,8 +1031,18 @@ export type MvpContributoor = {
   "errors": [
     {
       "code": 6000,
-      "name": "wrongPrivileges",
-      "msg": "You do not have sufficient privileges to create the task"
+      "name": "unauthorizedAccess",
+      "msg": "You do not have sufficient privileges to create or update the task"
+    },
+    {
+      "code": 6001,
+      "name": "cannotClaimOwnTask",
+      "msg": "Cannot claim your own task"
+    },
+    {
+      "code": 6002,
+      "name": "notTaskAssignee",
+      "msg": "Only the assignee can complete the task"
     }
   ],
   "types": [
@@ -1102,6 +1112,20 @@ export type MvpContributoor = {
         "kind": "struct",
         "fields": [
           {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "assignee",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "project",
+            "type": "pubkey"
+          },
+          {
             "name": "uuid",
             "type": "u64"
           },
@@ -1122,22 +1146,8 @@ export type MvpContributoor = {
             }
           },
           {
-            "name": "project",
-            "type": "pubkey"
-          },
-          {
-            "name": "creator",
-            "type": "pubkey"
-          },
-          {
             "name": "duration",
             "type": "u32"
-          },
-          {
-            "name": "assignee",
-            "type": {
-              "option": "pubkey"
-            }
           },
           {
             "name": "bump",

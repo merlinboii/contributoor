@@ -1,5 +1,5 @@
 {
-  "address": "HnznVd9qKht4y49dn7b3jn62mouX8srYCy1WW8UrtiPV",
+  "address": "2Gy7qY6QX6cBF6WDXY4vssoskAq29witMf4JcSmh1jQd",
   "metadata": {
     "name": "mvp_contributoor",
     "version": "0.1.0",
@@ -1025,8 +1025,18 @@
   "errors": [
     {
       "code": 6000,
-      "name": "WrongPrivileges",
-      "msg": "You do not have sufficient privileges to create the task"
+      "name": "UnauthorizedAccess",
+      "msg": "You do not have sufficient privileges to create or update the task"
+    },
+    {
+      "code": 6001,
+      "name": "CannotClaimOwnTask",
+      "msg": "Cannot claim your own task"
+    },
+    {
+      "code": 6002,
+      "name": "NotTaskAssignee",
+      "msg": "Only the assignee can complete the task"
     }
   ],
   "types": [
@@ -1096,6 +1106,20 @@
         "kind": "struct",
         "fields": [
           {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "assignee",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "project",
+            "type": "pubkey"
+          },
+          {
             "name": "uuid",
             "type": "u64"
           },
@@ -1116,22 +1140,8 @@
             }
           },
           {
-            "name": "project",
-            "type": "pubkey"
-          },
-          {
-            "name": "creator",
-            "type": "pubkey"
-          },
-          {
             "name": "duration",
             "type": "u32"
-          },
-          {
-            "name": "assignee",
-            "type": {
-              "option": "pubkey"
-            }
           },
           {
             "name": "bump",
