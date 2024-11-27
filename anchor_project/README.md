@@ -4,8 +4,7 @@ MVP Contributoor is a Solana program designed to manage contributors and project
 
 ## Table of Contents
 - [Overview](#overview)
-- [Features](#features)
-- [Getting Started](#getting-started)
+- [Installation](#installation)
 - [Usage](#usage)
 - [Testing](#testing)
 - [Security](#security)
