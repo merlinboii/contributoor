@@ -1,3 +1,4 @@
+![Contributoor Logo](./frontend/assets/pages/cover.png)
 # 🧑🏻‍💻 Contributoor
 An MVP platform for managing and rewarding contributors in a decentralized manner using Solana. The platform connects contributors with tasks, allowing them to claim, work on, and submit tasks while being rewarded for their efforts. It also ensures fair distribution and accountability through blockchain-based records.
 
