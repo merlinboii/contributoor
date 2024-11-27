@@ -18,16 +18,7 @@ The MVP Contributoor program allows users to:
 
 
 ## Installation
-To set up the project locally, follow these steps:
-1. **Clone the repository:**
-
-   ```bash
-   git clone https://github.com/yourusername/mvp_contributoor.git
-   cd mvp_contributoor
-   ```
-
-
-2. **Install dependencies:**
+1. **Install dependencies:**
 - [Rust installed](https://www.rust-lang.org/tools/install)
     - Make sure to use stable version:
     ```bash
