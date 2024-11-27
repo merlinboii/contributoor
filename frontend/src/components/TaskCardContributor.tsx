@@ -11,7 +11,7 @@ import { TransactionSignature } from '@solana/web3.js';
 
 // Utils
 import { notify } from '../utils/notifications';
-import { claimTask, submitTask } from '../utils/taskUtils';
+import { claimTask, submitTask, getStatusIcon, getStatusColor } from '../utils/taskUtils';
 import { TaskStatus } from '../utils/enum';
 
 interface Task {
@@ -26,35 +26,11 @@ interface Task {
   projectName: string;
   remainingTime: number;
   endDate: string;
+  isOverdue: boolean;
 }
 
 interface TaskCardsProps {
   tasks: Task[];
-}
-
-const getStatusIcon = (status: string): string => {
-  switch (status) {
-    case TaskStatus.Open:
-      return "Open";
-    case TaskStatus.Claimed:
-      return "Claimed";
-    case TaskStatus.Submitted:
-      return "Submitted";
-    case TaskStatus.Completed:
-      return "Completed";
-    default:
-      return "Unknown";
-  }
-}
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case TaskStatus.Open: return "default";
-    case TaskStatus.Claimed: return "primary";
-    case TaskStatus.Submitted: return "warning";
-    case TaskStatus.Completed: return "success";
-    default: return "default";
-  }
 }
 
 const progressCalculation = (remainingTime: number, duration: number) => {
@@ -182,8 +158,8 @@ export const TaskCardsContributor: React.FC<TaskCardsProps> = ({ tasks }) => {
               <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Chip 
                   icon={task.completed ? <CheckCircle /> : <RadioButtonUnchecked />}
-                  label={getStatusIcon(task.status)}
-                  color={getStatusColor(task.status)}
+                  label={getStatusIcon(task.status, task.isOverdue)}
+                  color={getStatusColor(task.status, task.isOverdue)}
                   size="small"
                 />
               </Box>
@@ -207,7 +183,7 @@ export const TaskCardsContributor: React.FC<TaskCardsProps> = ({ tasks }) => {
                     </Button>
                   </Box>
                 )}
-              {task.status === TaskStatus.Claimed && (
+              {task.status === TaskStatus.Claimed && !task.isOverdue && (
                 <Box display="flex" justifyContent="space-between" mt={2}>
                   <Button
                     variant="contained"

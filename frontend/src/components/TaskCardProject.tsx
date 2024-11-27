@@ -29,6 +29,7 @@ interface Task {
   assignee: any;
   endDate: string;
   remainingTime: number;
+  isOverdue: boolean;
 }
 
 interface TaskCardsProps {
@@ -183,12 +184,12 @@ export const TaskCardsProject: React.FC<TaskCardsProps> = ({ tasks }) => {
                 <Box display="flex" justifyContent="space-between" alignItems="center">
                   <Chip 
                     icon={task.completed ? <CheckCircle /> : <RadioButtonUnchecked />}
-                    label={getStatusIcon(task.status)}
-                    color={getStatusColor(task.status)}
+                    label={getStatusIcon(task.status, task.isOverdue)}
+                    color={getStatusColor(task.status, task.isOverdue)}
                     size="small"
                   />
                 </Box>
-                {task.status === TaskStatus.Submitted && (
+                {task.status === TaskStatus.Submitted && !task.isOverdue && (
                   <Box display="flex" justifyContent="space-between" mt={2}>
                     <Button
                       variant="contained"
@@ -199,6 +200,19 @@ export const TaskCardsProject: React.FC<TaskCardsProps> = ({ tasks }) => {
                     >
                       Approve
                     </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleRejectTask(task)}
+                      color="warning"
+                      disabled={task.completed}
+                      size="small"
+                    >
+                      Reject
+                    </Button>
+                  </Box>
+                )}
+                {task.status === TaskStatus.Claimed && task.isOverdue && (
+                  <Box display="flex" justifyContent="space-between" mt={2}>
                     <Button
                       variant="contained"
                       onClick={() => handleRejectTask(task)}

@@ -23,7 +23,11 @@ const getProvider = (connection: any, wallet: any) => {
     return provider;
 };
 
-export const getStatusIcon = (status: string): string => {
+export const getStatusIcon = (status: string, isOverdue: boolean): string => {
+    if (status === TaskStatus.Claimed && isOverdue) {
+        return "Overdue";
+    }
+
     switch (status) {
       case TaskStatus.Open:
         return "Open";
@@ -38,7 +42,11 @@ export const getStatusIcon = (status: string): string => {
     }
   }
   
-export const getStatusColor = (status: string) => {
+export const getStatusColor = (status: string, isOverdue: boolean) => {
+    if (status === TaskStatus.Claimed && isOverdue) {
+        return "error";
+    }
+
     switch (status) {
       case TaskStatus.Open: return "default";
       case TaskStatus.Claimed: return "primary";

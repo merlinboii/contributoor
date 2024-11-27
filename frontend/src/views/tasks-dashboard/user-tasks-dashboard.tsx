@@ -99,7 +99,8 @@ export const UserTasksDashboardView: FC = () => {
                         const taskAssignmentPDA = await getTaskAssignmentAccountByPublicKey(task.publicKey, wallet.publicKey);
                         const taskAssignment = await program.account.taskAssignment.fetch(taskAssignmentPDA);
                         const now = Math.floor(new Date().getTime() / 1000);
-                        const endTime = taskAssignment.endTime.toNumber() < now ? 0 : taskAssignment.endTime.toNumber() - now;
+                        const isOverdue = taskAssignment.endTime.toNumber() < now;
+                        const endTime = isOverdue ? 0 : taskAssignment.endTime.toNumber() - now;
 
                         return {
                             pda: task.publicKey,
@@ -112,6 +113,7 @@ export const UserTasksDashboardView: FC = () => {
                             projectName: project.name,
                             remainingTime: durationSecondsToDays(endTime),
                             endDate: new Date(taskAssignment.endTime.toNumber() * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                            isOverdue: isOverdue,
                         }
                     })
                 );
