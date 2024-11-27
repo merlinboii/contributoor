@@ -13,6 +13,8 @@ import { useRouter } from 'next/router';
 import { TaskCardsContributor } from '../../components/TaskCardContributor';
 import { TaskStatus } from 'utils/enum';
 import { Cancel, Task, CheckCircle } from '@mui/icons-material';
+import { getProjectAccountByPublicKey } from 'utils/projectUtils';
+import { getTaskAssignmentAccountByPublicKey } from 'utils/taskUtils';
 
 const idl_string = JSON.stringify(idl);
 const idl_object = JSON.parse(idl_string);
@@ -72,22 +74,44 @@ export const UserTasksDashboardView: FC = () => {
                 const anchProvider = getProvider();
                 const program = new Program<MvpContributoorType>(idl_object, anchProvider);
 
-                // Fetch all task accounts
-                const taskAccounts = await program.account.task.all();
-                
-                const tasks = taskAccounts
-                .filter((task) => task.account.assignee?.toBase58() === anchProvider.publicKey.toBase58())
-                .map((task) => ({
-                    pda: task.publicKey,
-                    id: task.account.uuid.toString(),
-                    title: task.account.name,
-                    description: task.account.description,
-                    duration: durationSecondsToDays(task.account.duration),
-                    status: Object.keys(task.account.status)[0],
-                    creator: task.account.creator,
-                }))
-                .sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+                // Fetch all task accounts for the contributor
+                const memcmpFilter = { 
+                    memcmp: {
+                        offset: 8 + 32 + 1,
+                        bytes: anchProvider.publicKey.toBase58()
+                    }
+                }
 
+                const taskAccounts = await program.account.task.all([
+                    memcmpFilter
+                ]);
+                
+                const tasks = await Promise.all(taskAccounts
+                    .sort((a, b) => statusOrder[a.account.status] - statusOrder[b.account.status])
+                    .map(async (task) => {
+                        const projectPDA = await getProjectAccountByPublicKey(wallet, task.account.creator, connection);
+                        const project = await program.account.project.fetch(projectPDA);
+                        
+                        const taskAssignmentPDA = await getTaskAssignmentAccountByPublicKey(task.publicKey, wallet.publicKey);
+                        const taskAssignment = await program.account.taskAssignment.fetch(taskAssignmentPDA);
+                        const now = Math.floor(new Date().getTime() / 1000);
+                        const endTime = taskAssignment.endTime.toNumber() < now ? 0 : taskAssignment.endTime.toNumber() - now;
+
+                        return {
+                            pda: task.publicKey,
+                            id: task.account.uuid.toString(),
+                            title: task.account.name,
+                            description: task.account.description,
+                            duration: durationSecondsToDays(task.account.duration),
+                            status: Object.keys(task.account.status)[0],
+                            creator: task.account.creator,
+                            projectName: project.name,
+                            remainingTime: durationSecondsToDays(endTime),
+                            endDate: new Date(taskAssignment.endTime.toNumber() * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                        }
+                    })
+                );
+            
                 setTasks(tasks);
             } catch (error) {
                 console.error('Error fetching tasks:', error);
@@ -97,11 +121,6 @@ export const UserTasksDashboardView: FC = () => {
 
         fetchAllTasks();
     }, [connection]);
-
-    const handleMarkComplete = async (taskId: string) => {
-        alert(taskId);
-        // Implement task completion logic here
-    };
 
     return (
         <Box sx={{ maxWidth: 1400, margin: 'auto', padding: 4, position: 'relative' }}>
@@ -116,23 +135,6 @@ export const UserTasksDashboardView: FC = () => {
                 <Button color="success" startIcon={<CheckCircle />}>Success: {successTasks}</Button>
                 <Button color="warning" startIcon={<Cancel />}>Failed: {failedTasks}</Button>
             </ButtonGroup>
-                {/* <Grid container spacing={2}>
-                    <Grid item xs={4}>
-                        <Button variant="contained" color="success" fullWidth>
-                            Success: {successTasks}
-                        </Button>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <Button variant="contained" color="primary" fullWidth>
-                            Claimed: {claimedTasks}
-                        </Button>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <Button variant="contained" color="error" fullWidth>
-                            Failed: {failedTasks}
-                        </Button>
-                    </Grid>
-                </Grid> */}
             </Box>
             {tasks.length === 0 ? (
                 <Box textAlign="center" mt={4}>
@@ -141,7 +143,7 @@ export const UserTasksDashboardView: FC = () => {
                     </Typography>
                 </Box>
             ) : (
-                <TaskCardsContributor tasks={tasks} handleMarkComplete={handleMarkComplete} />
+                <TaskCardsContributor tasks={tasks} />
             )}
         </Box>
     );

@@ -12,6 +12,7 @@ import { checkContributorAccount, getContributorAccount } from 'utils/contributo
 import { useRouter } from 'next/router';
 import { TaskCardsContributor } from '../../components/TaskCardContributor';
 import { TaskStatus } from 'utils/enum';
+import { getProjectAccountByPublicKey } from 'utils/projectUtils';
 
 const idl_string = JSON.stringify(idl);
 const idl_object = JSON.parse(idl_string);
@@ -27,7 +28,6 @@ export const TasksDashboardView: FC = () => {
     const { connection } = useConnection();
     const [tasks, setTasks] = useState<any[]>([]);
     const router = useRouter();
-    const [contributorAccount, setContributorAccount] = useState<any>(null);
 
     const getProvider = () => {
         const provider = new AnchorProvider(connection, wallet, AnchorProvider.defaultOptions());
@@ -47,8 +47,7 @@ export const TasksDashboardView: FC = () => {
                   router.push('/'); // Redirect to the main page if no account is found
                   return;
                 }
-                const contributorAccount = await getContributorAccount(wallet, connection);
-                setContributorAccount(contributorAccount);
+
               } else {
                 notify({
                   type: 'error',
@@ -65,19 +64,24 @@ export const TasksDashboardView: FC = () => {
                 // Fetch all task accounts
                 const taskAccounts = await program.account.task.all();
                 
-                const tasks = taskAccounts
-                .filter((task) => Object.keys(task.account.status)[0] === TaskStatus.Open)
-                .map((task) => ({
-                    pda: task.publicKey,
-                    id: task.account.uuid.toString(),
-                    title: task.account.name,
-                    description: task.account.description,
-                    duration: durationSecondsToDays(task.account.duration),
-                    status: Object.keys(task.account.status)[0],
-                    creator: task.account.creator,
-                }));
 
-                console.log(tasks);
+                const tasks = await Promise.all(taskAccounts
+                .filter((task) => Object.keys(task.account.status)[0] === TaskStatus.Open)
+                .map(async (task) => {
+                    const projectPDA = await getProjectAccountByPublicKey(wallet, task.account.creator, connection);
+                    const project = await program.account.project.fetch(projectPDA);
+
+                    return {
+                        pda: task.publicKey,
+                        id: task.account.uuid.toString(),
+                        title: task.account.name,
+                        description: task.account.description,
+                        duration: durationSecondsToDays(task.account.duration),
+                        status: Object.keys(task.account.status)[0],
+                        creator: task.account.creator,
+                        projectName: project.name,
+                    }
+                }));
 
                 setTasks(tasks);
             } catch (error) {
@@ -89,11 +93,6 @@ export const TasksDashboardView: FC = () => {
         fetchAllTasks();
         setMode();
     }, [connection]);
-
-    const handleMarkComplete = async (taskId: string) => {
-        alert(taskId);
-        // Implement task completion logic here
-    };
 
     return (
         <Box sx={{ maxWidth: 1400, margin: 'auto', padding: 4, position: 'relative' }}>
@@ -109,7 +108,7 @@ export const TasksDashboardView: FC = () => {
                     </Typography>
                 </Box>
             ) : (
-                <TaskCardsContributor tasks={tasks} handleMarkComplete={handleMarkComplete} />
+                <TaskCardsContributor tasks={tasks} />
             )}
         </Box>
     );
