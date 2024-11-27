@@ -5,6 +5,8 @@ An MVP platform for managing and rewarding contributors in a decentralized manne
 ## Deployed on
 * **Devnet**: [2Gy7qY6QX6cBF6WDXY4vssoskAq29witMf4JcSmh1jQd](https://explorer.solana.com/address/2Gy7qY6QX6cBF6WDXY4vssoskAq29witMf4JcSmh1jQd?cluster=devnet)
 
+* For integration test, make sure your solana wallet has enough SOL to pay for the transaction fees or get some faucet [here](https://faucet.solana.com/).
+
 ## Motivation
 In today’s world, people face **challenges finding credible projects to contribute to** and ensuring that their work is fairly compensated. The MVP Contributor platform aims to address this by offering a decentralized solution for task management, enabling contributors to participate in projects securely and transparently on the Solana blockchain.
 
