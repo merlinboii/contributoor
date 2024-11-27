@@ -87,7 +87,11 @@ export const UserTasksDashboardView: FC = () => {
                 ]);
                 
                 const tasks = await Promise.all(taskAccounts
-                    .sort((a, b) => statusOrder[a.account.status] - statusOrder[b.account.status])
+                    .sort((a, b) => {
+                        const statusA = Object.keys(a.account.status)[0];
+                        const statusB = Object.keys(b.account.status)[0];
+                        return statusOrder[statusA] - statusOrder[statusB];
+                    })                    
                     .map(async (task) => {
                         const projectPDA = await getProjectAccountByPublicKey(wallet, task.account.creator, connection);
                         const project = await program.account.project.fetch(projectPDA);
