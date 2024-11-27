@@ -30,6 +30,11 @@ In today’s world, people face **challenges finding credible projects to contri
     ```bash
     avm use 0.30.1
     ```
+- [Test dependencies](./tests/package.json)
+    ```bash
+    npm install
+    ```
+
 
 2. **Build the Program**:
     - Navigate to the `anchor_project` directory:
