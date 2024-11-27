@@ -1,19 +1,18 @@
+// React
 import React, { useState } from 'react';
-import { Grid, Card, CardContent, Typography, Button, Box, Chip, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material';
+import { Grid, Card, CardContent, Typography, Button, Box, Chip } from '@mui/material';
 import { AccessTime, CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
-import { TaskStatus } from '../utils/enum';
-import { get } from 'http';
+import { useRouter } from 'next/navigation';
 
-import { Program, AnchorProvider, web3, utils, BN, setProvider } from "@coral-xyz/anchor"
-import idl from "./mvp_contributoor.json"
-import { MvpContributoor as MvpContributoorType } from "./mvp_contributoor"
-import { PublicKey, SystemProgram } from '@solana/web3.js';
-import { useRouter } from 'next/router';
+// Solana
+import { PublicKey } from '@solana/web3.js';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { TransactionSignature } from '@solana/web3.js';
-import { notify } from '../utils/notifications';
 
+// Utils
+import { notify } from '../utils/notifications';
 import { claimTask, submitTask } from '../utils/taskUtils';
+import { TaskStatus } from '../utils/enum';
 
 interface Task {
   pda: any;
@@ -24,11 +23,13 @@ interface Task {
   completed: boolean;
   status: string;
   creator: any;
+  projectName: string;
+  remainingTime: number;
+  endDate: string;
 }
 
 interface TaskCardsProps {
   tasks: Task[];
-  handleMarkComplete: (id: string) => void;
 }
 
 const getStatusIcon = (status: string): string => {
@@ -56,20 +57,28 @@ const getStatusColor = (status: string) => {
   }
 }
 
-export const TaskCardsContributor: React.FC<TaskCardsProps> = ({ tasks, handleMarkComplete }) => {
-  const [openEditInfo, setOpenEditInfo] = useState(false);
-  const [openEditDuration, setOpenEditDuration] = useState(false);
-  const [currentTask, setCurrentTask] = useState<Task | null>(null);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [duration, setDuration] = useState(0);
+const progressCalculation = (remainingTime: number, duration: number) => {
+  return Math.floor((remainingTime / duration) * 100);
+}
 
+export const TaskCardsContributor: React.FC<TaskCardsProps> = ({ tasks }) => {
   const router = useRouter();
 
   const ourWallet = useWallet();
   const { connection } = useConnection();
 
   let signature: TransactionSignature = '';
+
+  const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
+
+  const handleMouseEnter = (taskId: string) => {
+    setHoveredTaskId(taskId);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredTaskId(null);
+  };
+
 
   const handleClaimTask = async (task: Task) => {
     try {
@@ -108,11 +117,20 @@ export const TaskCardsContributor: React.FC<TaskCardsProps> = ({ tasks, handleMa
   }
 
   return (
-    <Grid container spacing={20}>
-      {tasks.map((task) => (
-        <Grid item xs={12} sm={6} md={4} key={task.id}>
+    <Box className='flex justify-center items-center'>
+      <Grid container spacing={5} sx={{ width: '100%' }}>
+        {tasks.map((task) => (
+        <Grid 
+          item 
+          xs={12} 
+          sm={tasks.length > 2 ? 4 : 6} 
+          md={tasks.length > 2 ? 4 : tasks.length == 1 ? 10 : 6} 
+          key={task.id + task.creator}
+          onMouseEnter={() => handleMouseEnter(task.id)}
+          onMouseLeave={handleMouseLeave}
+        >
           <Card sx={{ 
-            width: '300px',
+            width: '100%',
             height: '100%', 
             display: 'flex', 
             flexDirection: 'column', 
@@ -124,18 +142,38 @@ export const TaskCardsContributor: React.FC<TaskCardsProps> = ({ tasks, handleMa
             '&:hover': {
               transform: 'translateY(-5px)',
               boxShadow: 6,
-            },
-          }}>
+              },
+            }}>
             <CardContent sx={{ flexGrow: 1 }}>
               <Typography variant="h5" component="div" gutterBottom>
                 {task.title}
               </Typography>
+              <Box display="flex" alignItems="center" mb={2}>
+                <Typography variant="body2" color="text.secondary">
+                  by {task.projectName}
+                </Typography>
+              </Box>
               <Box display="flex" alignItems="center" mb={2}>
                 <AccessTime fontSize="small" color="action" />
                 <Typography variant="body2" color="text.secondary" ml={1}>
                   Duration: {task.duration} days
                 </Typography>
               </Box>
+              {task.status === TaskStatus.Claimed && (
+                <>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <Typography variant="body2" color="text.secondary">
+                  Due date: {task.endDate}
+                  </Typography>
+                  </Box>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <progress value={progressCalculation(task.remainingTime, task.duration)} max={100} />
+                  <Typography variant="body2" color="text.secondary" ml={1}>
+                    Remain: {task.remainingTime} days
+                  </Typography>
+                </Box>
+                </>
+              )}
               <Typography variant="body1" color="text.secondary" paragraph>
                 {task.description}
               </Typography>
@@ -150,18 +188,25 @@ export const TaskCardsContributor: React.FC<TaskCardsProps> = ({ tasks, handleMa
                 />
               </Box>
               {task.status === TaskStatus.Open && (
-                <Box display="flex" justifyContent="space-between" mt={2}>
-                  <Button
-                  variant="contained"
-                  onClick={() => handleClaimTask(task)}
-                  color="primary"
-                  disabled={task.completed}
-                  size="small"
-                >
-                  Claim
-                </Button>
-              </Box>
-              )}
+                  <Box display="flex" justifyContent="space-between" mt={2}>
+                    <Button
+                      variant="contained"
+                      onClick={() => {
+                        if (task.creator.toBase58() !== ourWallet.publicKey.toBase58()) {
+                          handleClaimTask(task);
+                        }
+                      }}
+                      color="primary"
+                      disabled={task.completed || (hoveredTaskId === task.id && task.creator.toBase58() === ourWallet.publicKey.toBase58())}
+                      size="small"
+                    >
+                      {hoveredTaskId === task.id && task.creator.toBase58() === ourWallet.publicKey.toBase58() ? 
+                        "Own" : 
+                        "Claim"
+                      }
+                    </Button>
+                  </Box>
+                )}
               {task.status === TaskStatus.Claimed && (
                 <Box display="flex" justifyContent="space-between" mt={2}>
                   <Button
@@ -176,8 +221,9 @@ export const TaskCardsContributor: React.FC<TaskCardsProps> = ({ tasks, handleMa
               )}
             </Box>
           </Card>
-        </Grid>
-      ))}
-    </Grid>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
   );
 };

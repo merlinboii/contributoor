@@ -1,5 +1,4 @@
 export { HomeView } from "./home";
-export { BasicsView } from "./basics";
 
 export { TasksDashboardView } from "./tasks-dashboard";
 export { UserTasksDashboardView } from "./tasks-dashboard/user-tasks-dashboard";

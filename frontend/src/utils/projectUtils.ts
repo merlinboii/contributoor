@@ -1,7 +1,6 @@
 import { Program, AnchorProvider, setProvider } from "@coral-xyz/anchor";
 import idl from "../components/mvp_contributoor.json";
-import { PublicKey } from '@solana/web3.js';
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { PublicKey, SystemProgram } from '@solana/web3.js';
 import { MvpContributoor } from "../components/mvp_contributoor";
 
 const idl_string = JSON.stringify(idl);
@@ -70,4 +69,23 @@ export const getProjectAccountByPublicKey = async (wallet: any, publicKey: any, 
         console.error("Error fetching project account:", error);
         return null;
     }
+}
+
+export const registerProject = async (wallet: any, connection: any, name: string, description: string): Promise<any> => {
+    const anchProvider = getProvider(connection, wallet);
+    const program = new Program<MvpContributoor>(idl_object, anchProvider);
+
+    const projectPDA = await getProjectAccountByPublicKey(wallet, wallet.publicKey, connection);
+
+    const registerProjectAccounts = {
+        user: anchProvider.publicKey,
+        project: projectPDA,
+        systemProgram: SystemProgram.programId,
+    };
+    const signature = await program.methods.registerProject(
+        name,
+        description,
+    ).accounts(registerProjectAccounts).rpc();
+
+    return signature;
 }

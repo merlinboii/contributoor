@@ -1,34 +1,20 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+// Utils
+import { FC } from 'react';
+import { useRouter } from 'next/navigation';
 
-import { verify } from '@noble/ed25519';
+// Solana
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import bs58 from 'bs58';
-import { FC, useCallback, useState, useEffect } from 'react';
+
+// Utils
 import { notify } from "../utils/notifications";
-
-import { Program, AnchorProvider, web3, utils, BN, setProvider } from "@coral-xyz/anchor"
-import idl from "./mvp_contributoor.json"
-import { MvpContributoor as MvpContributoorType } from "./mvp_contributoor"
-import { PublicKey } from '@solana/web3.js';
-
 import { checkContributorAccount } from '../utils/contributorUtils';
-
-const idl_string = JSON.stringify(idl)
-const idl_object = JSON.parse(idl_string)
-const programID = new PublicKey(idl.address)
 
 export const NavContributorButton: FC = () => {
   const ourWallet = useWallet();
   const { connection } = useConnection()
   const router = useRouter()
-
-  const getProvider = () => {
-      const provider = new AnchorProvider(connection, ourWallet, AnchorProvider.defaultOptions())
-      setProvider(provider)
-      return provider
-  }
 
   const onClick = async () => {
     if (ourWallet.publicKey) {

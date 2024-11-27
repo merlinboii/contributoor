@@ -1,6 +1,6 @@
 import { Program, AnchorProvider, setProvider } from "@coral-xyz/anchor";
 import idl from "../components/mvp_contributoor.json";
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, SystemProgram } from '@solana/web3.js';
 import { MvpContributoor } from "../components/mvp_contributoor";
 
 const idl_string = JSON.stringify(idl);
@@ -70,4 +70,29 @@ export const getContributorAccountByPublicKey = async (wallet: any, publicKey: a
         console.error("Error fetching contributor account:", error);
         return null;
     }
+}
+
+export const registerContributor = async (wallet: any, connection: any, name: string): Promise<any> => {
+    const anchProvider = getProvider(connection, wallet);
+    const program = new Program<MvpContributoor>(idl_object, anchProvider);
+
+    const contributorPDA = await getContributorAccountByPublicKey(wallet, anchProvider.publicKey, connection);
+
+    const [nameRegistryPDA] = await PublicKey.findProgramAddress(
+        [Buffer.from("contributor-name"), Buffer.from(name)],
+        program.programId
+    );
+
+    // define an obj before using
+    const registerContributorAccounts = {
+        user: anchProvider.publicKey,
+        contributor: contributorPDA,
+        nameRegistry: nameRegistryPDA,
+        systemProgram: SystemProgram.programId,
+    };
+    const signature = await program.methods.registerContributor(
+        name
+    ).accounts(registerContributorAccounts).rpc();
+
+    return signature;
 }

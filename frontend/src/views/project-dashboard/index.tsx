@@ -1,23 +1,26 @@
-import { Box, Button, Card, CardContent, Typography, Grid, IconButton } from '@mui/material'
+// Next, React
+import { FC, useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
+import { Box, Button, Typography, IconButton } from '@mui/material'
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import AddIcon from '@mui/icons-material/Add';
 
-// Next, React
-import { FC, useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/router';
-
-// Wallet
+// Solana
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
 import { Program, AnchorProvider, setProvider } from "@coral-xyz/anchor";
 import idl from '../../components/mvp_contributoor.json';
 import { MvpContributoor as MvpContributoorType } from '../../components/mvp_contributoor';
 import { notify } from '../../utils/notifications';
+
+// Utils
 import { checkProjectAccount, getProjectAccount } from '../../utils/projectUtils';
 import { walletConnectedCheck } from '../../utils/utils';
-import { TaskCardsProject } from '../../components/TaskCardProject';
 import { TaskStatus } from '../../utils/enum';
+
+// Components   
+import { TaskCardsProject } from '../../components/TaskCardProject';
+import { getTaskAssignmentAccountByPublicKey } from 'utils/taskUtils';
 
 const idl_string = JSON.stringify(idl);
 const idl_object = JSON.parse(idl_string);
@@ -79,31 +82,54 @@ export const ProjectDashboardView: FC = () => {
             try {
                 const anchProvider = getProvider();
                 const program = new Program<MvpContributoorType>(idl_object, anchProvider);
+                
+                const memcmpFilter = { 
+                    memcmp: {
+                        offset: 8,
+                        bytes: anchProvider.publicKey.toBase58()
+                    }
+                }
 
-                const taskAccounts = await program.account.task.all();
+                const taskAccounts = await program.account.task.all([
+                    memcmpFilter
+                ]);
 
                 console.log(taskAccounts);
 
-                const tasks = taskAccounts
-                    .filter((task) => task.account.creator?.toBase58() === anchProvider.publicKey.toBase58())
-                    .map((task) => {
-                        const status = Object.keys(task.account.status)[0];
+                const tasks = await Promise.all(taskAccounts  
+                .sort((a, b) => {
+                    const statusA = Object.keys(a.account.status)[0];
+                    const statusB = Object.keys(b.account.status)[0];
+                    return statusOrder[statusA] - statusOrder[statusB];
+                })                  
+                .map(async (task) => {
+                    const status = Object.keys(task.account.status)[0];
+                    
+                    let endTime: number = 0;
+                    let taskAssignment: any;
+                    if (task.account.assignee) {
+                        const taskAssignmentPDA = await getTaskAssignmentAccountByPublicKey(task.publicKey, new PublicKey(task.account.assignee));
+                        taskAssignment = await program.account.taskAssignment.fetch(taskAssignmentPDA);
+                        const now = Math.floor(new Date().getTime() / 1000);
+                        endTime = taskAssignment.endTime.toNumber() < now ? 0 : taskAssignment.endTime.toNumber() - now;
+                    }
+                    
+                    return {
+                        pda: task.publicKey,
+                        id: task.account.uuid.toString(),
+                        title: task.account.name,
+                        description: task.account.description,
+                        duration: task.account.duration,
+                        completed: status === TaskStatus.Completed,
+                        status: status,
+                        creator: task.account.creator?.toBase58(),
+                        assignee: task.account.assignee?.toBase58(),
+                        remainingTime: durationSecondsToDays(endTime),
+                        endDate: endTime == 0 ? 'N/A' : new Date(taskAssignment.endTime.toNumber() * 1000).toLocaleDateString(),
+                    };
+                })
+                );
 
-                        return {
-                            pda: task.publicKey,
-                            id: task.account.uuid.toString(),
-                            title: task.account.name,
-                            description: task.account.description,
-                            duration: task.account.duration,
-                            completed: status === TaskStatus.Completed,
-                            status: status,
-                            creator: task.account.creator?.toBase58(),
-                            assignee: task.account.assignee?.toBase58(),
-                        };
-                    })
-                    .sort((a, b) => {
-                        return statusOrder[a.status] - statusOrder[b.status];
-                    });
                 setTasks(tasks);
             } catch (error) {
                 console.error('Error fetching tasks:', error);
@@ -114,11 +140,6 @@ export const ProjectDashboardView: FC = () => {
         setMode();
         fetchTasks();
     }, [wallet.publicKey, connection]);
-
-    const handleMarkComplete = async (taskId: string) => {
-        alert(taskId);
-        // Implement task completion logic here
-    };
 
     const handleCreateTask = () => {
         router.push('/create-task');
@@ -160,7 +181,7 @@ export const ProjectDashboardView: FC = () => {
                     </Button>
                 </Box>
             ) : (
-                <TaskCardsProject tasks={tasks} handleMarkComplete={handleMarkComplete} />
+                <TaskCardsProject tasks={tasks} />
             )}
         </Box>
     );

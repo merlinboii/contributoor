@@ -1,7 +1,12 @@
+// Anchor
 import { Program, AnchorProvider, setProvider, BN } from "@coral-xyz/anchor";
 import idl from "../components/mvp_contributoor.json";
-import { PublicKey, SystemProgram, TransactionSignature } from '@solana/web3.js';
+
+// Solana
+import { PublicKey, SystemProgram } from '@solana/web3.js';
 import { MvpContributoor } from "../components/mvp_contributoor";
+
+// Utils
 import { getProjectAccountByPublicKey } from "./projectUtils";
 import { TaskStatus } from "./enum";
 import { getContributorAccountByPublicKey } from "./contributorUtils";
@@ -11,8 +16,6 @@ const idl_object = JSON.parse(idl_string);
 const programID = new PublicKey(idl.address);
 
 const DAY_IN_SECONDS = 24 * 60 * 60;
-let signature: TransactionSignature = '';
-
 
 const getProvider = (connection: any, wallet: any) => {
     const provider = new AnchorProvider(connection, wallet, AnchorProvider.defaultOptions());
@@ -109,7 +112,7 @@ export const createTask = async (ownerKey: PublicKey, wallet: any, connection: a
         systemProgram: SystemProgram.programId,
     };
 
-    signature = await program.methods.createTask(
+    const signature = await program.methods.createTask(
         name,
         description,
         duration,
@@ -131,7 +134,7 @@ export const updateTaskInfo = async (wallet: any, ownerKey: any, connection: any
         systemProgram: SystemProgram.programId,
     };
 
-    signature = await program.methods.updateTaskInfo(
+    const signature = await program.methods.updateTaskInfo(
           new BN(taskId),
           name,
           description
@@ -153,7 +156,7 @@ export const updateTaskDuration = async (wallet: any, ownerKey: any, connection:
         systemProgram: SystemProgram.programId,
     };
 
-    signature = await program.methods.updateTaskDuration(
+    const signature = await program.methods.updateTaskDuration(
           new BN(taskId),
           daysToSeconds(duration)
       ).accounts(updateTaskDurationAccounts).rpc();
@@ -178,7 +181,7 @@ export const approveTask = async (wallet: any, ownerKey: PublicKey, connection: 
         systemProgram: SystemProgram.programId,
     };
 
-    signature = await program.methods.approveTask(
+    const signature = await program.methods.approveTask(
         new BN(taskId),
     ).accounts(approveTaskAccounts).rpc();
 
@@ -202,7 +205,7 @@ export const rejectTask = async (wallet: any, ownerKey: PublicKey, connection: a
         systemProgram: SystemProgram.programId,
     };
 
-    signature = await program.methods.rejectTask(
+    const signature = await program.methods.rejectTask(
         new BN(taskId),
     ).accounts(rejectTaskAccounts).rpc();
 
@@ -224,7 +227,7 @@ export const claimTask = async (wallet: any, projectOwnerKey: PublicKey, connect
         systemProgram: SystemProgram.programId,
     };
 
-    signature = await program.methods.claimTask(
+    const signature = await program.methods.claimTask(
         new BN(taskId),
     ).accounts(claimTaskAccounts).rpc();
 
@@ -246,7 +249,7 @@ export const submitTask = async (wallet: any, projectOwnerKey: PublicKey, connec
         systemProgram: SystemProgram.programId,
     };
 
-    signature = await program.methods.submitTask(
+    const signature = await program.methods.submitTask(
         new BN(taskId),
     ).accounts(submitTaskAccounts).rpc();
 

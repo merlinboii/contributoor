@@ -1,19 +1,14 @@
-import { verify } from '@noble/ed25519';
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import bs58 from 'bs58';
-import { FC, useCallback, useState, useEffect } from 'react';
-import { notify } from "../utils/notifications";
+// React
+import { FC } from 'react';
 import { useRouter } from 'next/router';
 
-import { Program, AnchorProvider, web3, utils, BN, setProvider } from "@coral-xyz/anchor"
-import idl from "./mvp_contributoor.json"
-import { MvpContributoor as MvpContributoorType } from "./mvp_contributoor"
-import { PublicKey, SystemProgram, TransactionSignature } from '@solana/web3.js';
-import { createTask } from '../utils/taskUtils';
+// Solana
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { TransactionSignature } from '@solana/web3.js';
 
-const idl_string = JSON.stringify(idl)
-const idl_object = JSON.parse(idl_string)
-const programID = new PublicKey(idl.address)
+// Utils
+import { notify } from "../utils/notifications";
+import { createTask } from '../utils/taskUtils';
 
 interface CreateTaskProps {
     name: string;
@@ -28,12 +23,6 @@ export const CreateTask: FC<CreateTaskProps> = ({ name, description, duration })
     const { connection } = useConnection();
 
     let signature: TransactionSignature = '';
-
-    const getProvider = () => {
-        const provider = new AnchorProvider(connection, ourWallet, AnchorProvider.defaultOptions())
-        setProvider(provider)
-        return provider
-    }
 
     const onClick = async () => {
         try {

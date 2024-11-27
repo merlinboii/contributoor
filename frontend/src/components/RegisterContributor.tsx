@@ -1,18 +1,14 @@
-import { verify } from '@noble/ed25519';
+// React
+import { FC } from 'react';
+import { useRouter } from 'next/navigation';
+
+// Solana
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import bs58 from 'bs58';
-import { FC, useCallback, useState, useEffect } from 'react';
+import { TransactionSignature } from '@solana/web3.js';
+
+// Utils
 import { notify } from "../utils/notifications";
-import { useRouter } from 'next/router';
-
-import { Program, AnchorProvider, web3, utils, BN, setProvider } from "@coral-xyz/anchor"
-import idl from "./mvp_contributoor.json"
-import { MvpContributoor as MvpContributoorType } from "./mvp_contributoor"
-import { PublicKey, SystemProgram, TransactionSignature } from '@solana/web3.js';
-
-const idl_string = JSON.stringify(idl)
-const idl_object = JSON.parse(idl_string)
-const programID = new PublicKey(idl.address)
+import { registerContributor } from '../utils/contributorUtils';
 
 interface RegisterContributorProps {
     name: string;
@@ -26,37 +22,32 @@ export const RegisterContributor: FC<RegisterContributorProps> = ({ name }) => {
 
     let signature: TransactionSignature = '';
 
-    const getProvider = () => {
-        const provider = new AnchorProvider(connection, ourWallet, AnchorProvider.defaultOptions())
-        setProvider(provider)
-        return provider
-    }
-
     const onClick = async () => {
         try {
-            const anchProvider = getProvider();
-            const program = new Program<MvpContributoorType>(idl_object, anchProvider);
+            signature = await registerContributor(ourWallet, connection, name);
+            // const anchProvider = getProvider();
+            // const program = new Program<MvpContributoorType>(idl_object, anchProvider);
 
-            const [contributorPDA] = await PublicKey.findProgramAddress(
-                [Buffer.from("contributor-info"), anchProvider.publicKey.toBuffer()],
-                program.programId
-            );
+            // const [contributorPDA] = await PublicKey.findProgramAddress(
+            //     [Buffer.from("contributor-info"), anchProvider.publicKey.toBuffer()],
+            //     program.programId
+            // );
 
-            const [nameRegistryPDA] = await PublicKey.findProgramAddress(
-                [Buffer.from("contributor-name"), Buffer.from(name)],
-                program.programId
-            );
+            // const [nameRegistryPDA] = await PublicKey.findProgramAddress(
+            //     [Buffer.from("contributor-name"), Buffer.from(name)],
+            //     program.programId
+            // );
 
-            // define an obj before using
-            const registerContributorAccounts = {
-                user: anchProvider.publicKey,
-                contributor: contributorPDA,
-                nameRegistry: nameRegistryPDA,
-                systemProgram: SystemProgram.programId,
-            };
-            const signature = await program.methods.registerContributor(
-                name
-            ).accounts(registerContributorAccounts).rpc();
+            // // define an obj before using
+            // const registerContributorAccounts = {
+            //     user: anchProvider.publicKey,
+            //     contributor: contributorPDA,
+            //     nameRegistry: nameRegistryPDA,
+            //     systemProgram: SystemProgram.programId,
+            // };
+            // signature = await program.methods.registerContributor(
+            //     name
+            // ).accounts(registerContributorAccounts).rpc();
 
             // Get the latest block hash to use on our transaction and confirmation
             const latestBlockhash = await connection.getLatestBlockhash();

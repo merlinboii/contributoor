@@ -2,16 +2,16 @@
 import { FC, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 
-// Wallet
+// Solana
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-
-// Components
-import { RegisterContributor } from '../../components/RegisterContributor';
 
 // Utils
 import { checkContributorAccount } from '../../utils/contributorUtils';
 import { notify } from '../../utils/notifications';
 import { walletConnectedCheck } from '../../utils/utils';
+
+// Components
+import { RegisterContributor } from '../../components/RegisterContributor';
 
 export const ContributorRegistrationView: FC = () => {
   const router = useRouter();

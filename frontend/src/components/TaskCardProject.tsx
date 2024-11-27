@@ -1,17 +1,21 @@
+// React
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Grid, Card, CardContent, Typography, Button, Box, Chip } from '@mui/material';
 import { AccessTime, CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
-import { TaskStatus } from '../utils/enum';
-import { Program, AnchorProvider, web3, utils, BN, setProvider } from "@coral-xyz/anchor"
-import idl from "./mvp_contributoor.json"
-import { MvpContributoor as MvpContributoorType } from "./mvp_contributoor"
-import { PublicKey, SystemProgram } from '@solana/web3.js';
-import { useRouter } from 'next/router';
+
+// Solana
+import { PublicKey } from '@solana/web3.js';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { TransactionSignature } from '@solana/web3.js';
+
+// Utils
 import { notify } from '../utils/notifications';
-import { TaskEditPopup } from './TaskEditPopup';
+import { TaskStatus } from '../utils/enum';
 import { getStatusIcon, getStatusColor, updateTaskInfo, updateTaskDuration, secondsToDays, approveTask, rejectTask } from '../utils/taskUtils';
+
+// Components
+import { TaskEditPopup } from './TaskEditPopup';
 
 interface Task {
   pda: any;
@@ -23,14 +27,20 @@ interface Task {
   status: string;
   creator: any;
   assignee: any;
+  endDate: string;
+  remainingTime: number;
 }
 
 interface TaskCardsProps {
   tasks: Task[];
-  handleMarkComplete: (id: string) => void;
 }
 
-export const TaskCardsProject: React.FC<TaskCardsProps> = ({ tasks, handleMarkComplete }) => {
+const progressCalculation = (remainingTime: number, duration: number) => {
+  console.log(remainingTime, duration);
+  return Math.floor((remainingTime / duration) * 100);
+}
+
+export const TaskCardsProject: React.FC<TaskCardsProps> = ({ tasks }) => {
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const router = useRouter();
   const ourWallet = useWallet();
@@ -121,11 +131,12 @@ export const TaskCardsProject: React.FC<TaskCardsProps> = ({ tasks, handleMarkCo
   return (
     <>
     <Box className='flex justify-center items-center'>
-      <Grid container spacing={5} sx={{ width: '100%' }}>
+      <Grid container spacing={5} sx={{ width: '100%', justifyContent: 'center' }}>
         {tasks.map((task) => (
-          <Grid item xs={12} sm={6} md={4} key={task.id}>
+          <Grid item xs={12} sm={tasks.length > 2 ? 4 : 8} md={tasks.length > 2 ? 4 : tasks.length == 1 ? 10 : 6} key={task.id}>
             <Card sx={{ 
               width: '100%',
+              maxWidth: '400px',
               height: '100%', 
               display: 'flex', 
               flexDirection: 'column', 
@@ -149,6 +160,21 @@ export const TaskCardsProject: React.FC<TaskCardsProps> = ({ tasks, handleMarkCo
                     Duration: {secondsToDays(task.duration)} days
                   </Typography>
                 </Box>
+                {task.status === TaskStatus.Claimed && (
+                    <>
+                    <Box display="flex" alignItems="center" mb={2}>
+                        <Typography variant="body2" color="text.secondary">
+                          Due date: {task.endDate}
+                        </Typography>
+                      </Box>
+                      <Box display="flex" alignItems="center" mb={2}>
+                        <progress value={progressCalculation(task.remainingTime, secondsToDays(task.duration))} max={100} />
+                        <Typography variant="body2" color="text.secondary" ml={1}>
+                          Remain: {task.remainingTime} days
+                        </Typography>
+                      </Box>
+                    </>
+                  )}
                 <Typography variant="body1" color="text.secondary" paragraph>
                   {task.description}
                 </Typography>
