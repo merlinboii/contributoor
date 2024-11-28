@@ -80,34 +80,33 @@ This section provides an overview of the task status experience within the dApp 
 #### Project Account
 * Task Open 
     - Project dashboard
-![Task Open](./assets/task-status/project-own-dashbaord-open.png)
+<br/>![Task Open](./assets/task-status/project-own-dashbaord-open.png)
     - Tasks dashboard
         - Other tasks
-        ![Other Tasks](./assets/task-status/contributor-open.png)
+        <br/>![Other Tasks](./assets/task-status/contributor-open.png)
         - Own tasks: hover on the task card to see disable actions to claim their tasks
-        ![Task Open](./assets/task-status/project-task-dashboard-open.png)
+        <br/>![Task Open](./assets/task-status/project-task-dashboard-open.png)
 
 * Task Claimed
-![Task Claimed](./assets/task-status/project-be-claimed.png)
+<br/>![Task Claimed](./assets/task-status/project-be-claimed.png)
 
 * Task Submitted
-![Task Submitted](./assets/task-status/project-be-submitted.png)
+<br/>![Task Submitted](./assets/task-status/project-be-submitted.png)
 
 * Task Completed: When the task is approved by the owner, for rejected tasks, the task will automatically be re-opened.
-
-![Task Completed](./assets/task-status/project-complete.png)
+<br/>![Task Completed](./assets/task-status/project-complete.png)
 
 * Task Overdue
-![Task Overdue](./assets/task-status/project-overdue.png)
+<br/>![Task Overdue](./assets/task-status/project-overdue.png)
 
 #### Contributor Account
 * Task Open
-![Task Open](./assets/task-status/contributor-open.png)
+<br/>![Task Open](./assets/task-status/contributor-open.png)
 * Task Claimed
-![Task Claimed](./assets/task-status/contributor-claim.png)
+<br/>![Task Claimed](./assets/task-status/contributor-claim.png)
 * Task Submitted
-![Task Submitted](./assets/task-status/contributor-submit.png)
+<br/>![Task Submitted](./assets/task-status/contributor-submit.png)
 * Task Overdue (waiting for owner to reject)
-![Task Overdue](./assets/task-status/contributor-overdue.png)
+<br/>![Task Overdue](./assets/task-status/contributor-overdue.png)
 * Task Progress Count
-![Task Progress Count](./assets/task-status/contributor-progress-count.png)
+<br/>![Task Progress Count](./assets/task-status/contributor-progress-count.png)
